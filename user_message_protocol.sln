@@ -1,0 +1,29 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 9.00
+# Visual Studio 2005
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "user_message_protocol", "user_message_protocol\user_message_protocol.vcproj", "{7BB44DCE-1564-4584-999A-40F190D783A4}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "test_ump", "test_ump\test_ump.vcproj", "{A3D73AE6-0B1B-44E4-AC11-D33254933879}"
+	ProjectSection(ProjectDependencies) = postProject
+		{7BB44DCE-1564-4584-999A-40F190D783A4} = {7BB44DCE-1564-4584-999A-40F190D783A4}
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Win32 = Debug|Win32
+		Release|Win32 = Release|Win32
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{7BB44DCE-1564-4584-999A-40F190D783A4}.Debug|Win32.ActiveCfg = Debug|Win32
+		{7BB44DCE-1564-4584-999A-40F190D783A4}.Debug|Win32.Build.0 = Debug|Win32
+		{7BB44DCE-1564-4584-999A-40F190D783A4}.Release|Win32.ActiveCfg = Release|Win32
+		{7BB44DCE-1564-4584-999A-40F190D783A4}.Release|Win32.Build.0 = Release|Win32
+		{A3D73AE6-0B1B-44E4-AC11-D33254933879}.Debug|Win32.ActiveCfg = Debug|Win32
+		{A3D73AE6-0B1B-44E4-AC11-D33254933879}.Debug|Win32.Build.0 = Debug|Win32
+		{A3D73AE6-0B1B-44E4-AC11-D33254933879}.Release|Win32.ActiveCfg = Release|Win32
+		{A3D73AE6-0B1B-44E4-AC11-D33254933879}.Release|Win32.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

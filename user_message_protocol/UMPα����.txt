@@ -1,0 +1,284 @@
+UMP粗略设计和工作流程，伪代码表示
+控制报文和数据报文分离，处理队列也互相分离。控制报文使用停止等待式交互，不使用队列。
+
+结构体
+UMP套接字
+typedef struct _ump_socket
+{
+	int inner_sock;
+	gpointer u_ctrl_call_para;
+	int state;
+	…………
+}ump_socket;
+
+状态机调用结构体
+typedef struct _u_call_params
+{
+	guint call_func;
+	gpointer result;
+	gpointer parameters;
+}u_call_params;
+
+各状态机函数的参数单独定义成结构体，结构体的指针放到parameters里。
+
+UMP库原语
+ump* ump_bind(src_addr,src_port,back_log)
+ump_close(ump*)
+ump* ump_connect(dest_addr,dest_port)
+ump_listen(ump*)
+ump* ump_accept(ump*)
+guint ump_send_message(ump*,gpointer data)
+guint ump_receive_message(ump*,gpointer * data)
+
+锁：
+Snd_Rcv_L
+Snd_UsrSnd_L
+Snd_UsrCtrl_L
+Snd_WakeUpCon_L
+
+事件（MEvent）：
+Usr_Snd_MEvent（通知数据发送完毕）
+Usr_Ctrl_MEvent（通知控制动作完成）
+Do_BG_Work_MEvent（通知后台处理线程有消息/调用要处理）
+
+
+ump后台处理线程
+1、取接收线程收到的SYN、FIN、SndACK、Data等
+	Snd_Rcv_L[涉及接收数据队列和一些控制字段]
+
+2、取T_List，取S_Timeout（控制信息的超时）
+	自取
+
+3、决定是否超时或消解超时，决定发送窗口和是否发送RcvACK，准备RcvACK数据。
+
+4、处理收到的数据，包括SYN、FIN、MSS、WND（控制信息）；Data（数据）等
+	可能会切换状态、Snd_Rcv_L[放数据到接收队列]；并决定是否发送对控制信号的回应
+	处理完毕后，释放ump_packet
+
+5、向用户线程报告发送（connect、close、send_message）完毕
+	将执行结果放到用户发送线程传来的指针中。令u_ctrl_call_para=NULL，Snd_UsrSnd_L[unlock]，激发Usr_Snd_MEvent
+	将执行结果放到用户控制线程传来的指针中。令u_snd_call_para=NULL，Snd_UsrCtrl_L[unlock]，激发Usr_Ctrl_MEvent
+
+6、取要发送数据，取用户控制线程的控制动作
+	Snd_UsrSnd_Try_L[取用户发送线程的数据]
+	Snd_UsrCtrl_Try_L[取用户控制线程的调用]
+
+7、组包，捎带RcvACK
+
+8、发包
+
+9、若无事做，休眠
+	wait(Do_BG_Work_MEvent,timeout)
+
+ump总监听线程
+1、接收包
+	分配一段MSS长的内存（raw_data）用于接收数据
+2、初步分析包
+	将raw_data转化成ump_packet，其中u_p->raw_data=raw_data，u_p->user_data指向raw_data的用户数据部分。
+3、将包发送到对应的ump下的待处理队列（若队列满则丢弃），若为控制包则放到控制包域，Snd_Rcv_L锁保护
+
+4、唤醒对应的ump的后台处理线程
+
+创建ump
+ump* ump_bind(src_addr,src_port)
+
+关闭ump
+ump_close(ump*)
+
+主动连接
+ump_connect()
+
+被动连接
+//ump_listen()
+ump_accept()
+
+用户发送线程
+ump_send_message()的工作流程
+
+用户控制线程
+ump_inner_call
+Snd_UsrCtrl_L[将控制调用参数放到smp变量中等待后台处理线程取用]
+	填充u_call_params结构体，将调用数据结构体的指针放到parameters里，将结果结构体的指针放到result里
+	将要调用的函数的序号填充到call_func里
+	让u_ctrl_call_para指针指向此结构体
+激发Do_BG_Work_MEvent
+等待Usr_Ctrl_MEvent
+	唤醒后，从u_call_params里取出result
+
+基于ump_inner_call定义ump_inner_connect、ump_inner_listen等等
+
+用户接收线程
+ump_receive_message()的工作流程
+
+
+
+给拼装好的消息建立一个指针，rec从这个指针中取数据即可
+在sock_thread里开辟一个存放待处理的包的链表，每次都从共享的队列里把包拷到链表里接着解锁
+（考虑窗口更新）
+在当前结构下，packet_info怎么和发送队列协调起来？
+packet_info不参与数据发送队列的控制，仅参与控制报文和ack的发送逻辑
+解决重发和ack的问题
+
+cwnd=1，ssthresh=512，backpoint=our_data_seq_base
+处理ack子程序（供调用）（已做）
+	如果acknum<seq_base且acknum>data_sent
+	则丢弃ack
+	
+	seq_base=ack_num
+	如果(data_pos<seq_base)
+		data_pos=seq_base
+	处理rwnd
+		取出rwnd，更新窗口，刷新our_wnd_pos
+		若our_wnd_pos扩大，*sleep_ms=0
+	
+	消解超时并更新rtt
+		如果ack小于等于backpoint，则不更新rtt
+		
+	处理快速重传
+		收到重复的ack，rep_count++
+		收到三个以上重复的ack，则
+			刷新backpoint
+			cwnd=ssthresh+3
+			data_pos=seq_base
+			fast_retran=true
+			清除超时
+			rto进行指数退避，*sleep_ms=0
+	处理快速恢复
+		代码能走到这里，表明有新的ack到来
+			rep_count=0
+			如果fast_retran=true
+				则cwnd=ssthresh
+				fast_retran=false
+				
+	如果fast_retran=false，则增加cwnd
+		慢启动	cwnd每次增加1
+		拥塞避免	每rtt最多增加1
+
+
+处理超时（已做）
+	如果存在超时
+		ssthresh=Max(cwnd / 2, 2)
+		cwnd=1
+		backpoint=data_pos
+		data_pos=seq_base
+		rep_count=0
+		fast_retran=false
+		更新rto
+		刷新our_wnd_pos
+		*sleep_ms=0;
+		
+发送数据（已做）
+	//our_wnd=our_data_seq_base+MIN(cwnd,their_wnd,rest_size_of_data)
+	while(data_pos<our_wnd){
+		发送数据，并且为每个数据注册超时
+		our_data_sent=data_pos//只变大
+		data_pos++
+	}
+
+todo:sleep_ms的设置
+
+流量控制问题
+	msg_q=组装好的消息队列
+	packet_t=临时缓冲区
+	packet_q=收到的包的总缓冲区（可以使用链表）
+	r_wnd=通告窗口
+	q_msg_num=收到包的总缓冲区内拼装出的完整的消息的数量，默认=0
+	r_wnd基础值=len(packet_t)/2
+	first_msg_end_pos=packet_q中从表头到第一个已接收完毕的消息尾的位置
+	
+处理收到的数据报（已做）
+	一次处理全部滞留的数据报，没有数据报就直接返回
+	调用前面的处理ack程序
+	在rec_base_seq位置之后，按顺序排列数据报并插入packet_q（丢弃合法seq范围之外的数据报和重复数据报）
+	更新rec_base_seq
+		while(rec_base_seq位置的下一个元素存在且其seq==rec_base_seq+1){
+			rec_base_seq++
+			若rec_base_seq的数据报有bdr标志
+				q_msg_num++
+				若q_msg_num==1
+					first_msg_end_pos=rec_base_seq
+				若msg_q空
+					调用摘除数据子程序
+		}
+	在循环之外，调用更新ack信息子程序
+
+处理用户Receive调用（handle_receive）
+	控制过程与snd类似
+	是否应该在ump_harvest_messages()函数中插入通告接收成功的语句？
+	若存在receive调用且通告msg_q不空
+		从msg_q取走数据后令msg_q为空
+		执行结束调用的例行控制过程
+		若q_msg_num>=1则调用摘除数据子程序
+		否则调用更新ack信息子程序
+		
+更新通告窗口（已做）
+	若packet_t被占据了1/2以下，则r_wnd=r_wnd基础值
+	若packet_t被占据了1/2以上，则r_wnd减小以使窗口右侧不右移
+	如果q_msg_num>0，则r_wnd减小以使窗口右侧不右移
+		
+更新ack信息子程序（供调用）（已做）
+	若packet_t被占据了1/2以下，立即设置ack信息（r_wnd和ack seq,*sleep_ms=0）
+	若packet_t被占据了1/2以上，等待一段时间再设置ack信息，*sleep_ms= x ms
+	
+
+摘除数据子程序（供调用）（已做）
+	摘出packet_q从表头到first_msg_end_pos为止的数据放到msg_q。（摘的操作只涉及头尾指针的改变，代价很小）
+	若first_msg_end_pos==rcv_data_so_far的seq，则rcv_data_so_far=NULL
+	q_msg_num--
+	若q_msg_num<1
+		first_msg_end_pos=-1
+	else
+		从packet_q表头开始寻找第一个具有bdr标志的数据报，得其seq。first_msg_end_pos=其seq
+
+
+l_data_pos 相对 当前要发送的数据报位置
+l_win_pos 相对 最终发送窗口所确定的位置
+l_data_count 用户提交数据后切分出的数据报的总数
+
+our_data_sent 绝对 已发送的数据的最大seq 只增大
+back_point 绝对 倒退点 只增大 小于倒退点的ack不计算rtt
+base_seq 绝对 待发送数据报数组中，第一个数据报的seq
+acked_seq 绝对 当前收到的ack中带的seq的最大者 只增大
+ack_seq 绝对 对方收到的数据报的seq+1
+cwnd 拥塞窗口
+rwnd 通告窗口
+
+
+acked_seq=base_seq=0
+	
+初始调用的发送函数（ump_handle_send）
+只在有调用时触发一次
+unlocked状态
+	if(snd_packets==NULL){直接结束调用}
+	设置l_data_pos=0，计算窗口等参数的值（参看后面的更新发送窗口）
+	为数据报从base_seq开始编号
+	转到locked状态
+locked状态
+	什么也不做
+
+连续调用的发送函数（ump_handle_send_data）l_data_pos为相对位置
+locked状态
+	如果l_data_pos<最终发送窗口所确定的位置（l_win_pos相对位置）
+		为即将发送的数据报注册超时
+		在l_data_pos的位置发送一个数据报（捎带ack）
+		令l_data_pos++
+		our_data_sent=MAX(our_data_sent,data_pos)（需要相对和绝对之间的转换）
+	else
+		单独发送ack
+unlocked状态
+	单独发送ack
+	
+数据报不适合用链表，要随机寻址
+
+发送完毕
+让l_data_pos=0,count=0并让数据包链表=NULL
+更新baseseq
+转到unlocked状态
+
+更新发送窗口
+	要将更新后的窗口根据base_seq换算成相对位置取。baseseq是这组数据报中，第一个数据报的seq。
+	若有l_data_count个数据报待发送，ack_seq是收到的最大的合法的ack的seq（等于对方收到的数据的seq+1），r_wnd是ack中的通告窗口，cwnd拥塞窗口
+	l_win_pos=MIN(l_data_count,ack_seq+MIN(r_wnd,cwnd)-baseseq)
+	
+超时是一超全超
+

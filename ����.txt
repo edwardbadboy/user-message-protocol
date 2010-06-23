@@ -1,0 +1,6 @@
+安装glib
+将glib_2.20.3-1_win32.zip、libiconv-1.9.1.bin.woe32.zip、gettext-0.14.5.zip的内容解压缩，将所有的对应bin文件夹中的dll拷贝到windows\system32下
+
+关于msvcrt
+release版的需要一同拷贝MSVCRT.DLL、MSVCR80.DLL
+debug版的需要MSVCRT.DLL、MSVCR80D.DLL
