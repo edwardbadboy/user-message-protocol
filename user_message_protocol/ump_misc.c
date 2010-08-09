@@ -166,3 +166,18 @@ void ump_send_reset_packet(UMPSocket* u_sock)
 
 	return;
 }
+
+void ump_send_reset_packet_to(UMPCore* u_core,struct sockaddr_in *to)
+{
+	UMPPacket *rst_p=NULL;
+	gpointer data=NULL;
+	gint data_len=0;
+	
+	rst_p=u_packet_new(P_CONTROL,P_OUTGOING);
+	u_packet_set_flag(rst_p,UP_CTRL_RST);
+	data=u_packet_to_binary(rst_p,&data_len);
+	ump_sendto(u_core,data,data_len,to);
+	u_packet_free(rst_p);
+
+	return;
+}

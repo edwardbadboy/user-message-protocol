@@ -18,4 +18,5 @@ GList* ump_list_append(GList* list,gpointer data,gint* list_len);
 GList* ump_list_remove_link(GList* list,GList* llink,gint* list_len);
 GList* ump_list_first(GList* l);
 void ump_send_reset_packet(UMPSocket* u_sock);
+void ump_send_reset_packet_to(UMPCore* u_core,struct sockaddr_in *to);
 #endif

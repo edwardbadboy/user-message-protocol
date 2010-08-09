@@ -103,6 +103,7 @@ gpointer receive_thread_func(gpointer data)
 				u_p=NULL;
 				g_mutex_unlock(u_core->umps_lock);
 				log_out("found no receiver\r\n");
+				ump_send_reset_packet_to(u_core,&from);
 				continue;
 			}
 
