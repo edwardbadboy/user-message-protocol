@@ -93,6 +93,7 @@ void ump_handle_data_ack(UMPSocket *u_sock,UMPPacket* u_p,glong *sleep_ms);
 void ump_harvest_messages(UMPSocket* u_sock);
 void ump_check_rcv_data_so_far(UMPSocket* u_sock);
 void ump_act_req_wnd(UMPSocket* u_sock,glong *sleep_ms);
+void ump_handle_send_reset_packet(UMPSocket* u_sock, glong *sleep_ms);
 
 void ump_timeout_refresh_ctrl_rto(UMPSocket* u_sock);
 void ump_init_ctrl_rto(UMPSocket* u_sock);
@@ -252,6 +253,9 @@ typedef struct _ump_socket
 	UMPSockState public_state;//用锁保护的线程安全的状态，与state变量同时变化。只有state变化或者外部线程访问public_state时，才需要上锁。状态机函数不访问此变量不用上锁
 	GTimeVal connect_time;
 	GTimeVal close_time;
+
+	gboolean error_occured;
+	gboolean send_reset_packet;
 
 	MEvent* do_work_event;
 

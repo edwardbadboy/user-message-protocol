@@ -65,17 +65,20 @@ gpointer ump_sock_thread_func(gpointer data)
 		ump_handle_send(u_s,&sleep_ms);
 		ump_handle_receive(u_s,&sleep_ms);
 
-		u_s->buffer_load=ump_sock_fetch_received_packets(u_s,&sleep_ms);
+		if(u_s->error_occured==FALSE){
+			u_s->buffer_load=ump_sock_fetch_received_packets(u_s,&sleep_ms);
 
-		ump_handle_ctrl_packet(u_s,&sleep_ms);
-		ump_handle_data_packet(u_s,&sleep_ms);
-		ump_handle_data_timeout(u_s,&sleep_ms);
-		ump_refresh_our_rwnd_pos(u_s);
-		ump_refresh_our_ack_info(u_s,&sleep_ms);
-		ump_act_req_wnd(u_s,&sleep_ms);
-		ump_handle_ctrl_timeout(u_s,&sleep_ms);
-		ump_handle_send_ctrl_packet(u_s,&sleep_ms);
-		ump_handle_send_data(u_s,&sleep_ms);
+			ump_handle_ctrl_packet(u_s,&sleep_ms);
+			ump_handle_data_packet(u_s,&sleep_ms);
+			ump_handle_data_timeout(u_s,&sleep_ms);
+			ump_refresh_our_rwnd_pos(u_s);
+			ump_refresh_our_ack_info(u_s,&sleep_ms);
+			ump_act_req_wnd(u_s,&sleep_ms);
+			ump_handle_ctrl_timeout(u_s,&sleep_ms);
+			ump_handle_send_ctrl_packet(u_s,&sleep_ms);
+			ump_handle_send_data(u_s,&sleep_ms);
+			ump_handle_send_reset_packet(u_s,&sleep_ms);
+		}
 
 		sleep_ms=MIN((sleep_ms),tm_get_next_event(&(u_s->tm_list)));
 		g_get_current_time(&t_end);
@@ -166,6 +169,9 @@ UMPSocket* ump_sock_new(UMPCore* u_core,struct sockaddr_in *their_addr)
 	//u_sock->our_data_pos=0;
 	ump_init_ctrl_rto(u_sock);
 	u_sock->ctrl_packet_sent=TRUE;
+
+	u_sock->error_occured=FALSE;
+	u_sock->send_reset_packet=FALSE;
 
 	u_sock->sock_thread=g_thread_create(ump_sock_thread_func,u_sock,TRUE,NULL);
 	if(u_sock->sock_thread==NULL){
@@ -324,7 +330,7 @@ void ump_handle_send_ctrl_packet(UMPSocket* u_sock,glong* sleep_ms)
 {
 	gint data_len;
 	gpointer data=NULL;
-	UMPPacket* ctrl_ack_alone;
+	UMPPacket* ctrl_ack_alone=NULL;
 	gint send_r=0;
 	if(u_sock->ctrl_packet_sent==FALSE && u_sock->ctrl_packet_to_send!=NULL){
 		//捎带ctrl_ack
@@ -371,6 +377,18 @@ void ump_handle_ctrl_packet(UMPSocket* u_sock,glong* sleep_ms)
 			log_out("got FIN\n");
 		}
 #endif
+		if(u_packet_get_flag(p,UP_CTRL_RST)==TRUE){//处理rst报文，结束所有调用，将状态切换为closed
+			u_packet_free(p);
+			p=NULL;
+			g_list_free(first);
+			first=NULL;
+			u_sock->error_occured=TRUE;
+			ump_change_state(u_sock,UMP_CLOSED);
+			ump_end_ctrl(u_sock,METHOD_ALL_CALL,FALSE);
+			ump_end_send(u_sock,FALSE);
+			ump_end_receive(u_sock,FALSE);
+			break;
+		}
 		//调用状态机
 		u_sm_funcs[u_sock->state].sm_handle_ctrl_packet(u_sock,p,sleep_ms);
 		u_packet_free(p);
@@ -409,8 +427,12 @@ void ump_ctrlunlocked_handle_ctrl(UMPSocket* u_sock,glong* sleep_ms)
 		//检测用户是否发出了ctrl调用
 		if(u_sock->ctrl_para!=NULL){
 			ump_change_ctrllock_state(u_sock,UMP_LOCKED);
-			//获取了ctrl锁，根据连接状态机执行调用
-			u_sm_funcs[u_sock->state].sm_handle_ctrl(u_sock,sleep_ms);
+			if(u_sock->error_occured==TRUE){
+				u_ctrl_sm_funcs[u_sock->ctrl_locked].ctrllock_sm_end_ctrl(u_sock,METHOD_ALL_CALL,FALSE);
+			}else{
+				//获取了ctrl锁，根据连接状态机执行调用
+				u_sm_funcs[u_sock->state].sm_handle_ctrl(u_sock,sleep_ms);
+			}
 		}else{
 			//没有ctrl调用
 			g_mutex_unlock(u_sock->ctrl_para_lock);
@@ -515,12 +537,7 @@ void ump_sndunlocked_handle_snd(UMPSocket* u_sock,glong* sleep_ms)
 	//切换状态机状态
 	ump_change_sndlock_state(u_sock,UMP_LOCKED);
 
-	if(u_sock->snd_packets_count<1){
-		ump_end_send(u_sock,FALSE);
-		return;
-	}
-
-	if(u_sock->state!=UMP_ESTABLISHED){
+	if(u_sock->snd_packets_count<1 || u_sock->state!=UMP_ESTABLISHED || u_sock->error_occured==TRUE){
 		ump_end_send(u_sock,FALSE);
 		return;
 	}
@@ -732,7 +749,7 @@ void ump_recunlocked_handle_rec(UMPSocket* u_sock,glong* sleep_ms)
 		m_event_set(u_sock->rec_done);
 		return;
 	}
-	if(u_sock->state!=UMP_ESTABLISHED){
+	if(u_sock->state!=UMP_ESTABLISHED || u_sock->error_occured==TRUE){
 		u_sock->rec_ok=FALSE;
 		u_sock->receive_called=FALSE;
 		g_mutex_unlock(u_sock->rec_para_lock);
@@ -1212,11 +1229,11 @@ void ump_closed_handle_ctrl_packet(UMPSocket* u_sock,UMPPacket* p,glong* sleep_m
 	UMPPacket* uppri=p;
 	//如果收到了对flag的ack，那么调用完毕，取消锁，设置事件，释放控制包，设置指针为NULL
 	//如果收到了所有对data的ack，那么调用完毕，取消锁，设置事件，释放报文
-	if(u_packet_get_flag(p,UP_CTRL_SYN)==TRUE){
+	if(u_sock->syn_reced==FALSE && u_packet_get_flag(p,UP_CTRL_SYN)==TRUE){
 		//获取SEQ、MSS、WND信息
 		if(u_packet_get_flag(p,UP_CTRL_SEQ)==TRUE){
 			u_sock->their_ctrl_seq=uppri->seq_num+1;
-			u_sock->their_data_seq_base=uppri->seq_num;//1;
+			u_sock->their_data_seq_base=uppri->seq_num;//+1;
 		}else{
 			return;
 		}
@@ -1698,5 +1715,14 @@ void ump_closing_enter_state(UMPSocket* u_sock)
 
 void ump_closing_leave_state(UMPSocket* u_sock)
 {
+	return;
+}
+
+void ump_handle_send_reset_packet(UMPSocket* u_sock, glong *sleep_ms)
+{
+	if(u_sock->send_reset_packet==TRUE){
+		ump_send_reset_packet(u_sock);
+		u_sock->send_reset_packet=FALSE;
+	}
 	return;
 }

@@ -17,4 +17,5 @@ guint16 ump_relative_to_seq_via_rcvseq(UMPSocket* u_sock,guint l);
 GList* ump_list_append(GList* list,gpointer data,gint* list_len);
 GList* ump_list_remove_link(GList* list,GList* llink,gint* list_len);
 GList* ump_list_first(GList* l);
+void ump_send_reset_packet(UMPSocket* u_sock);
 #endif

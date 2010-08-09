@@ -17,6 +17,7 @@
 #include "ump_misc.h"
 #include "ump_private.h"
 #include "ump_sock.h"
+#include "upacket_public.h"
 #include "debug_out.h"
 
 gint ump_sendto(UMPCore* u_core,gpointer buff,gint buff_l,struct sockaddr_in* to)
@@ -151,3 +152,17 @@ GList* ump_list_first(GList* l)
 	return l;
 }
 
+void ump_send_reset_packet(UMPSocket* u_sock)
+{
+	UMPPacket *rst_p=NULL;
+	gpointer data=NULL;
+	gint data_len=0;
+	
+	rst_p=u_packet_new(P_CONTROL,P_OUTGOING);
+	u_packet_set_flag(rst_p,UP_CTRL_RST);
+	data=u_packet_to_binary(rst_p,&data_len);
+	ump_sendto(u_sock->u_core,data,data_len,&u_sock->their_addr);
+	u_packet_free(rst_p);
+
+	return;
+}
