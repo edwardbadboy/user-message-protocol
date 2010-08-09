@@ -149,24 +149,37 @@ UMP_DLLDES void ump_core_close(UMPCore* u_core)
 	return;
 }
 
-//todo:处理一种特殊情况，后备队列中的连接被主动关闭，而我们却开始主动连接
 UMP_DLLDES UMPSocket* ump_connect(UMPCore* u_core,struct sockaddr_in *their_addr)
 {
 	UMPSocket* u_sock=NULL;
 	gboolean connect_r=FALSE;
 
 	g_mutex_lock(u_core->umps_lock);
-	//如果主动连接、活动连接表中已存在their_addr，直接返回错误
+	//如果主动连接、活动连接、已关闭表中已存在their_addr，直接返回错误
 	if(g_hash_table_lookup(u_core->act_connect,their_addr)!=NULL){
+		g_mutex_unlock(u_core->umps_lock);
 		return NULL;
 	}
 	if(g_hash_table_lookup(u_core->umps,their_addr)!=NULL){
+		g_mutex_unlock(u_core->umps_lock);
+		return NULL;
+	}
+	if(g_hash_table_lookup(u_core->closed_umps,their_addr)!=NULL){
+		g_mutex_unlock(u_core->umps_lock);
 		return NULL;
 	}
 	//如果后备队列中已存在their_addr，将其移动到主动连接表中
 	u_sock=g_hash_table_lookup(u_core->backlog_umps,their_addr);
 	if(u_sock!=NULL){
 		g_hash_table_remove(u_core->backlog_umps,their_addr);
+		g_mutex_lock(u_sock->pubic_state_lock);
+			if(u_sock->public_state==UMP_CLOSED || u_sock->public_state==UMP_CLOSING){
+				//处理一种特殊情况，后备队列中的连接被主动关闭，而我们却开始主动连接
+				g_mutex_unlock(u_sock->pubic_state_lock);
+				g_mutex_unlock(u_core->umps_lock);
+				return NULL;
+			}
+		g_mutex_unlock(u_sock->pubic_state_lock);
 	}else{
 		u_sock=ump_sock_new(u_core,their_addr);
 	}

@@ -141,9 +141,7 @@ gpointer receive_thread_func(gpointer data)
 
 			m_event_set(u_sock->do_work_event);
 		g_mutex_unlock(u_core->umps_lock);
-
-		//todo:如果在执行的动作过程中，u_sock被关闭了呢？
-		//解决:处理期间锁定umps，不允许关闭
+		//处理期间umps等表是被锁定的，不允许被清理线程关闭
 	}
 	return NULL;
 }

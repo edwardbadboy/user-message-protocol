@@ -181,6 +181,9 @@ UMPSocket* ump_sock_new(UMPCore* u_core,struct sockaddr_in *their_addr)
 	return u_sock;
 }
 
+
+//ump_sock_free目前只会由主清理线程、主接收线程调用或用户线程通过ump_connect调用
+//调用前必须锁定sock所在的哈希表，以避免数据损毁
 void ump_sock_free(UMPSocket* u_sock)
 {
 	UMPPacket* p;
@@ -195,7 +198,6 @@ void ump_sock_free(UMPSocket* u_sock)
 	//执行清理工作，释放控制调用锁和其他锁
 
 	//要向用户的控制线程报告控制失败
-	//todo:ump_sock_free可能由主清理线程调用，导致数据损毁
 	ump_end_ctrl(u_sock,METHOD_ALL_CALL,FALSE);
 	ump_end_send(u_sock,FALSE);
 	ump_end_receive(u_sock,FALSE);
@@ -927,41 +929,46 @@ void ump_handle_data_ack(UMPSocket *u_sock,UMPPacket* u_p,glong *sleep_ms)
 	GTimeVal now;
 	guint16 ack_seq=0;
 	gint32 ack_diff=0;
+	gboolean gotack=FALSE;
 	if(u_packet_get_flag(u_p,UP_DATA_ACK)==TRUE){
 		ack_seq=u_p->ack_num;
+		gotack=TRUE;
 #ifdef VERBOSE
 		log_out("got ack %u\n",ack_seq);
 #endif
 	}
-	if(ack_seq==u_sock->our_data_seq_base){
-		++(u_sock->ack_rep_count);
-	}
-	if(u_sock->ack_rep_count>1){
-		//快速重传
-		ump_refresh_back_point(u_sock,ump_relative_to_seq_via_sndstartseq(u_sock,(guint)u_sock->our_data_pos));
-		u_sock->our_data_pos=ump_seq_to_relative_via_sndstartseq(u_sock,u_sock->our_data_seq_base);
-		u_sock->our_cwnd=MAX(u_sock->our_ssthresh+3,1);
-		u_sock->ack_rep_count=0;
-		u_sock->fast_retran=TRUE;
-		tm_clear_list(&(u_sock->tm_list));
-		rto_timeout_occur(u_sock->rto_cpt);
-		*sleep_ms=0;
-	}
-	//检查ack是否在合法范围之内
-	ack_diff=ump_cmp_in_sndbase(u_sock,ack_seq,u_sock->our_data_seq_base);
-	if(ack_diff<0 || ump_cmp_in_sndbase(u_sock,ack_seq,u_sock->our_data_sent)>1){
-		return;
-	}
-	if(ack_diff>0){
-		//有新的ack到来
-		u_sock->our_data_seq_base=ack_seq;
-		u_sock->ack_rep_count=0;
-		//为back_point设置底线，ump_refresh_back_point只增大back_point
-		ump_refresh_back_point(u_sock,u_sock->our_data_seq_base);
+	
+	if(gotack==TRUE){
+		if(ack_seq==u_sock->our_data_seq_base){
+			++(u_sock->ack_rep_count);
+		}
+		if(u_sock->ack_rep_count>1){
+			//快速重传
+			ump_refresh_back_point(u_sock,ump_relative_to_seq_via_sndstartseq(u_sock,(guint)u_sock->our_data_pos));
+			u_sock->our_data_pos=ump_seq_to_relative_via_sndstartseq(u_sock,u_sock->our_data_seq_base);
+			u_sock->our_cwnd=MAX(u_sock->our_ssthresh+3,1);
+			u_sock->ack_rep_count=0;
+			u_sock->fast_retran=TRUE;
+			tm_clear_list(&(u_sock->tm_list));
+			rto_timeout_occur(u_sock->rto_cpt);
+			*sleep_ms=0;
+		}
+		//检查ack是否在合法范围之内
+		ack_diff=ump_cmp_in_sndbase(u_sock,ack_seq,u_sock->our_data_seq_base);
+		if(ack_diff<0 || ump_cmp_in_sndbase(u_sock,ack_seq,u_sock->our_data_sent)>1){
+			return;
+		}
+		if(ack_diff>0){
+			//有新的ack到来
+			u_sock->our_data_seq_base=ack_seq;
+			u_sock->ack_rep_count=0;
+			//为back_point设置底线，ump_refresh_back_point只增大back_point
+			ump_refresh_back_point(u_sock,u_sock->our_data_seq_base);
+		}
 	}
 	//ack_diff=0和ack_diff>0的情况都要处理通告窗口信息
 	ump_handle_wnd_notify(u_sock,u_p,sleep_ms);
-	if(ack_diff==0){
+	if(gotack==FALSE || ack_diff==0){
 		//如果没有新的ack，后面的就不用处理了
 		return;
 	}
@@ -1197,7 +1204,6 @@ void ump_change_state(UMPSocket* u_sock,UMPSockState new_state)
 
 
 
-//todo: closed处理数据报文的时候采取忽略的策略
 /////////////closed状态机相关函数
 void ump_closed_handle_ctrl(UMPSocket* u_sock,glong* sleep_ms)
 {
@@ -1260,6 +1266,7 @@ void ump_closed_handle_ctrl_packet(UMPSocket* u_sock,UMPPacket* p,glong* sleep_m
 	return;
 }
 
+//closed处理数据报文的时候采取忽略的策略
 void ump_closed_handle_data_packet(UMPSocket *u_sock,UMPPacket *p,glong *sleep_ms){
 	//处理ack信息
 	ump_handle_data_ack(u_sock,p,sleep_ms);
@@ -1331,7 +1338,6 @@ void ump_closed_leave_state(UMPSocket* u_sock)
 
 
 
-//todo: connecting处理数据报文的时候采取忽略的策略
 ////////////connecting状态机相关函数
 void ump_connecting_handle_ctrl(UMPSocket* u_sock,glong* sleep_ms)
 {
@@ -1407,6 +1413,8 @@ void ump_connecting_handle_ctrl_packet(UMPSocket* u_sock,UMPPacket* p,glong* sle
 	return;
 }
 
+
+//connecting处理数据报文的时候采取忽略的策略
 void ump_connecting_handle_data_packet(UMPSocket *u_sock,UMPPacket *p,glong *sleep_ms){
 	u_packet_free(p);
 	return;
