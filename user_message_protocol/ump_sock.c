@@ -160,9 +160,9 @@ UMPSocket* ump_sock_new(UMPCore* u_core,struct sockaddr_in *their_addr)
 	u_sock->rec_para_lock=g_mutex_new();
 	u_sock->rec_done=m_event_new(FALSE,TRUE);
 
-	u_sock->our_ctrl_seq=SEQ_START;//todo:用随机数代替
-	u_sock->our_data_start_seq=SEQ_START;
-	u_sock->our_data_seq_base=SEQ_START;
+	u_sock->our_ctrl_seq=(guint16)g_random_int_range(0,G_MAXUINT16);//SEQ_START;
+	u_sock->our_data_start_seq=u_sock->our_ctrl_seq;
+	u_sock->our_data_seq_base=u_sock->our_ctrl_seq;
 	//u_sock->our_data_pos=0;
 	ump_init_ctrl_rto(u_sock);
 	u_sock->ctrl_packet_sent=TRUE;

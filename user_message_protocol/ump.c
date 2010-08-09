@@ -37,6 +37,7 @@ WSADATA wsaData;
 
 UMP_DLLDES int ump_init()
 {
+	GTimeVal rnd_seed;
 	gint iresult=0;
 	#ifndef G_THREADS_ENABLED
 		return -1;
@@ -47,6 +48,9 @@ UMP_DLLDES int ump_init()
 	if(!g_thread_supported()){
 		g_thread_init(NULL);
 	}
+
+	g_get_current_time(&rnd_seed);
+	g_random_set_seed(rnd_seed.tv_sec*1000+rnd_seed.tv_usec/1000);
 
 	iresult = WSAStartup( MAKEWORD(2,2), &wsaData );
 	return iresult;
