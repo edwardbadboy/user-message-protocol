@@ -90,10 +90,12 @@ void ump_handle_data_packet(UMPSocket* u_sock,glong* sleep_ms);
 void ump_handle_data_timeout(UMPSocket* u_sock,glong* sleep_ms);
 void ump_handle_wnd_notify(UMPSocket *u_sock,UMPPacket* u_p,glong *sleep_ms);
 void ump_handle_data_ack(UMPSocket *u_sock,UMPPacket* u_p,glong *sleep_ms);
+
 void ump_harvest_messages(UMPSocket* u_sock);
 void ump_check_rcv_data_so_far(UMPSocket* u_sock);
 void ump_act_req_wnd(UMPSocket* u_sock,glong *sleep_ms);
 void ump_handle_send_reset_packet(UMPSocket* u_sock, glong *sleep_ms);
+void ump_connection_error_occured(UMPSocket* u_sock);
 
 void ump_timeout_refresh_ctrl_rto(UMPSocket* u_sock);
 void ump_init_ctrl_rto(UMPSocket* u_sock);

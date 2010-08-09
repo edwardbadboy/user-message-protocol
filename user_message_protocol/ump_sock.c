@@ -382,11 +382,7 @@ void ump_handle_ctrl_packet(UMPSocket* u_sock,glong* sleep_ms)
 			p=NULL;
 			g_list_free(first);
 			first=NULL;
-			u_sock->error_occured=TRUE;
-			ump_change_state(u_sock,UMP_CLOSED);
-			ump_end_ctrl(u_sock,METHOD_ALL_CALL,FALSE);
-			ump_end_send(u_sock,FALSE);
-			ump_end_receive(u_sock,FALSE);
+			ump_connection_error_occured(u_sock);
 			break;
 		}
 		//调用状态机
@@ -839,7 +835,8 @@ void ump_handle_ctrl_timeout(UMPSocket* u_sock,glong* sleep_ms)
 	ump_init_ctrl_rto(u_sock);
 	//要向用户的控制线程报告发送失败
 	ump_end_ctrl(u_sock,METHOD_ALL_CALL,FALSE);
-	//todo:要释放连接，停止工作
+	//释放连接，停止工作
+	ump_connection_error_occured(u_sock);
 
 	return;
 }
@@ -879,7 +876,8 @@ void ump_handle_data_timeout(UMPSocket* u_sock,glong* sleep_ms)
 	//超时太多则放弃重发，向用户报告错误
 	if(rto_get_rto(u_sock->rto_cpt)>=15000){
 		ump_end_send(u_sock,FALSE);
-		//todo:释放连接，停止工作
+		//释放连接，停止工作
+		ump_connection_error_occured(u_sock);
 		return;
 	}
 
@@ -1724,5 +1722,15 @@ void ump_handle_send_reset_packet(UMPSocket* u_sock, glong *sleep_ms)
 		ump_send_reset_packet(u_sock);
 		u_sock->send_reset_packet=FALSE;
 	}
+	return;
+}
+
+void ump_connection_error_occured(UMPSocket* u_sock)
+{
+	u_sock->error_occured=TRUE;
+	ump_change_state(u_sock,UMP_CLOSED);
+	ump_end_ctrl(u_sock,METHOD_ALL_CALL,FALSE);
+	ump_end_send(u_sock,FALSE);
+	ump_end_receive(u_sock,FALSE);
 	return;
 }
