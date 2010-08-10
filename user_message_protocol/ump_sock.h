@@ -109,6 +109,7 @@ void ump_refresh_our_ack_info(UMPSocket* u_sock,glong* sleep_ms);
 void ump_set_our_ack_info(UMPSocket* u_sock,gboolean push_ack);
 void ump_set_packet_ack_info(UMPSocket* u_sock,UMPPacket* u_p);
 void ump_clear_packet_ack_info(UMPSocket* u_sock,UMPPacket* u_p);
+void ump_handle_send_heartbeat(UMPSocket *u_sock,glong* sleep_ms);
 
 void ump_change_state(UMPSocket* u_sock,UMPSockState new_state);
 
@@ -255,6 +256,8 @@ typedef struct _ump_socket
 	UMPSockState public_state;//用锁保护的线程安全的状态，与state变量同时变化。只有state变化或者外部线程访问public_state时，才需要上锁。状态机函数不访问此变量不用上锁
 	GTimeVal connect_time;
 	GTimeVal close_time;
+
+	GTimeVal last_heartbeat;
 
 	gboolean error_occured;
 	gboolean send_reset_packet;

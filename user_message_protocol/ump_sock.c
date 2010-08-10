@@ -76,6 +76,7 @@ gpointer ump_sock_thread_func(gpointer data)
 			ump_act_req_wnd(u_s,&sleep_ms);
 			ump_handle_ctrl_timeout(u_s,&sleep_ms);
 			ump_handle_send_ctrl_packet(u_s,&sleep_ms);
+			ump_handle_send_heartbeat(u_s,&sleep_ms);
 			ump_handle_send_data(u_s,&sleep_ms);
 			ump_handle_send_reset_packet(u_s,&sleep_ms);
 		}
@@ -1165,7 +1166,11 @@ void ump_set_our_ack_info(UMPSocket* u_sock,gboolean push_ack)
 	if(push_ack==TRUE){
 		u_sock->ack_info.push_ack=TRUE;
 	}else{
-		u_sock->ack_info.schedule_ack=TRUE;
+		if(u_sock->ack_info.schedule_ack==FALSE){//两次schedule就构成一次push
+			u_sock->ack_info.schedule_ack=TRUE;
+		}else{
+			u_sock->ack_info.push_ack=TRUE;
+		}
 	}
 	/*if(u_sock->buffer_load <= (REC_QUEUE_LIMIT/2)){
 		u_sock->ack_info.push_ack=TRUE;
@@ -1741,4 +1746,18 @@ void ump_connection_error_occured(UMPSocket* u_sock)
 	ump_end_send(u_sock,FALSE);
 	ump_end_receive(u_sock,FALSE);
 	return;
+}
+
+void ump_handle_send_heartbeat(UMPSocket *u_sock,glong* sleep_ms)
+{
+	GTimeVal cur;
+	if(u_sock->state!=UMP_ESTABLISHED){
+		return;
+	}
+	g_get_current_time(&cur);
+	if(ump_time_sub(&cur,&u_sock->last_heartbeat)>10000){
+		ump_set_our_ack_info(u_sock,FALSE);
+		u_sock->last_heartbeat=cur;
+		*sleep_ms=0;
+	}
 }
