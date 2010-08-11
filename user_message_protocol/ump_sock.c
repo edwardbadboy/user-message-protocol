@@ -881,7 +881,7 @@ static void ump_handle_ctrl_timeout(UMPSocket* u_sock,glong* sleep_ms)
 	}
 	
 	//超时了，需要重发
-	if(u_sock->ctrl_rto<15000){
+	if(u_sock->ctrl_rto<TIMEOUT_LIMIT){
 		//一般的超时
 		u_sock->ctrl_packet_sent=FALSE;
 		//重新设置超时时间
@@ -937,7 +937,7 @@ static void ump_handle_data_timeout(UMPSocket* u_sock,glong* sleep_ms)
 	log_out("timeout occured\n");
 #endif
 	//超时太多则放弃重发，向用户报告错误
-	if(rto_get_rto(u_sock->rto_cpt)>=15000){
+	if(rto_get_rto(u_sock->rto_cpt)>=TIMEOUT_LIMIT){
 		ump_end_send(u_sock,FALSE);
 		//释放连接，停止工作
 		ump_connection_error_occured(u_sock);
@@ -1815,7 +1815,7 @@ static void ump_handle_send_heartbeat(UMPSocket *u_sock,glong* sleep_ms)
 		return;
 	}
 	g_get_current_time(&cur);
-	if(ump_time_sub(&cur,&u_sock->last_heartbeat)>10000){
+	if(ump_time_sub(&cur,&u_sock->last_heartbeat)>HEATTBEAT_INTERVAL){
 		ump_set_our_ack_info(u_sock,FALSE);
 		u_sock->last_heartbeat=cur;
 		*sleep_ms=0;

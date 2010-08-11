@@ -8,6 +8,8 @@
 #define REQ_WND_DELAY 500
 #define RTT_MIN_MS 50
 #define SEQ_START 0
+#define TIMEOUT_LIMIT 15000
+#define HEATTBEAT_INTERVAL 10000
 
 
 static gint32 ump_cmp_in_sndbase(UMPSocket* u_sock,guint16 x,guint16 y);
