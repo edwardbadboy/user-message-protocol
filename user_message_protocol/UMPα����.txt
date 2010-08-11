@@ -175,7 +175,7 @@ cwnd=1，ssthresh=512，backpoint=our_data_seq_base
 		data_pos++
 	}
 
-todo:sleep_ms的设置
+sleep_ms的设置
 
 流量控制问题
 	msg_q=组装好的消息队列

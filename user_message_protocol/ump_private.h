@@ -53,6 +53,9 @@ typedef struct _ump_core
 	GHashTable* act_connect;
 	GHashTable* closed_umps;
 	MEvent* accept_ok;
+	MEvent *stop_work;
 }UMPCore;
 
+static void ump_stop_background_threads_and_socket(UMPCore *u_core);
+static void ump_free_ump_sock(gpointer key,gpointer value,gpointer user_data);
 #endif

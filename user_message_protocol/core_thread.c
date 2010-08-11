@@ -31,6 +31,7 @@ gpointer receive_thread_func(gpointer data)
 	struct sockaddr_in from;
 	UMPPacket* u_p=NULL;
 	UMPSocket* u_sock;
+	gboolean stop_work=FALSE;
 
 	if(data==NULL){
 		log_out("cannot start receive thread: para is null\r\n");
@@ -44,7 +45,10 @@ gpointer receive_thread_func(gpointer data)
 	{
 		rec_data=ump_recvfrom(u_core,&rec_len,&from);
 		if(rec_data==NULL){
-			g_usleep(20000);
+			stop_work=m_event_timed_wait(u_core->stop_work,20);
+			if(stop_work==TRUE){
+				break;
+			}
 			log_out("receive ump packet failed\r\n");
 			continue;
 		}
@@ -148,6 +152,7 @@ gpointer receive_thread_func(gpointer data)
 
 gpointer cleaner_thread_func(gpointer data)
 {
+	gboolean stop_work=FALSE;
 	UMPCore* u_core=NULL;
 
 	if(data==NULL){
@@ -156,7 +161,10 @@ gpointer cleaner_thread_func(gpointer data)
 	u_core=(UMPCore*)data;
 
 	while(TRUE){
-		g_usleep(20000000);
+		stop_work=m_event_timed_wait(u_core->stop_work,20000);
+		if(stop_work==TRUE){
+			break;
+		}
 		g_mutex_lock(u_core->umps_lock);
 			g_hash_table_foreach_remove(u_core->closed_umps,ump_clean_closed_sock,NULL);
 			g_hash_table_foreach_remove(u_core->act_connect,ump_clean_closed_sock,NULL);

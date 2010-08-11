@@ -93,8 +93,6 @@ UMP_DLLDES UMPCore* ump_core_bind(struct sockaddr_in *our_addr,int backlog)
 	}
 	u_core->our_addr=(*our_addr);
 
-	//todo:添加用mutex保护的work_done公共变量用于控制线程执行
-	//todo:在创建出错时释放新的mutex
 	u_core->s_lock=g_mutex_new();
 	u_core->umps_lock=g_mutex_new();
 	//u_core->backlog_umps_lock=g_mutex_new();
@@ -105,47 +103,55 @@ UMP_DLLDES UMPCore* ump_core_bind(struct sockaddr_in *our_addr,int backlog)
 	u_core->closed_umps=g_hash_table_new(ump_inaddr_hash,ump_inaddr_eq);
 	u_core->accept_ok=m_event_new(FALSE,TRUE);
 
+	u_core->stop_work=m_event_new(FALSE,FALSE);
+
 	//initiates multithreading objects
 	u_core->rec_thread=g_thread_create(receive_thread_func,u_core,TRUE,NULL);
 	if(u_core->rec_thread==NULL){
-		closesocket(u_core->s);
-		g_mutex_free(u_core->s_lock);
-		g_mutex_free(u_core->umps_lock);
-		//g_mutex_free(u_core->backlog_umps_lock);
-		g_hash_table_destroy(u_core->umps);
-		g_hash_table_destroy(u_core->backlog_umps);
-		g_hash_table_destroy(u_core->closed_umps);
-#ifdef DEBUG_MEMORY_LEAK
-		free(u_core);
-#else
-		g_free(u_core);
-#endif
-		return NULL;
+		ump_core_close(u_core);
+		u_core=NULL;
 	}
 	u_core->cleaner_thread=g_thread_create(cleaner_thread_func,u_core,TRUE,NULL);
 	if(u_core->cleaner_thread==NULL){
-		closesocket(u_core->s);
-		g_mutex_free(u_core->s_lock);
-		g_mutex_free(u_core->umps_lock);
-		//g_mutex_free(u_core->backlog_umps_lock);
-		g_hash_table_destroy(u_core->umps);
-		g_hash_table_destroy(u_core->backlog_umps);
-		g_hash_table_destroy(u_core->closed_umps);
-		//todo:停止rec_thread工作
-#ifdef DEBUG_MEMORY_LEAK
-		free(u_core);
-#else
-		g_free(u_core);
-#endif
-		return NULL;
+		ump_core_close(u_core);
+		u_core=NULL;
 	}
 
     return u_core;
 }
 
-//todo:释放资源，关闭所有的线程
+//释放资源，关闭所有的线程
 UMP_DLLDES void ump_core_close(UMPCore* u_core)
 {
+	ump_stop_background_threads_and_socket(u_core);
+	g_mutex_lock(u_core->umps_lock);
+		g_hash_table_foreach(u_core->umps,ump_free_ump_sock,NULL);
+		g_hash_table_foreach(u_core->closed_umps,ump_free_ump_sock,NULL);
+		g_hash_table_foreach(u_core->act_connect,ump_free_ump_sock,NULL);
+		g_hash_table_foreach(u_core->backlog_umps,ump_free_ump_sock,NULL);
+	g_mutex_unlock(u_core->umps_lock);
+	g_mutex_free(u_core->s_lock);
+	g_mutex_free(u_core->umps_lock);
+	m_event_free(u_core->accept_ok);
+	m_event_free(u_core->stop_work);
+	g_hash_table_destroy(u_core->umps);
+	g_hash_table_destroy(u_core->backlog_umps);
+	g_hash_table_destroy(u_core->closed_umps);
+	g_hash_table_destroy(u_core->act_connect);
+#ifdef DEBUG_MEMORY_LEAK
+		free(u_core);
+#else
+		g_free(u_core);
+#endif
+	return;
+}
+
+static void ump_free_ump_sock(gpointer key,gpointer value,gpointer user_data)
+{
+	UMPSocket* u_sock;
+
+	u_sock=value;
+	ump_sock_free(u_sock);
 	return;
 }
 
@@ -351,6 +357,25 @@ UMP_DLLDES int ump_free_message(void * data)
 UMP_DLLDES void ump_set_log_stream(FILE* f)
 {
 	log_set_stream(f);
+	return;
+}
+
+static void ump_stop_background_threads_and_socket(UMPCore *u_core)
+{
+	//打断后台线程
+	m_event_broadcast(u_core->stop_work);//打断清理线程
+
+	closesocket(u_core->s);//打断接收数据报的线程
+	u_core->s=INVALID_SOCKET;
+
+	if(u_core->rec_thread!=NULL){
+		g_thread_join(u_core->rec_thread);
+		u_core->rec_thread=NULL;
+	}
+	if(u_core->cleaner_thread!=NULL){
+		g_thread_join(u_core->cleaner_thread);
+		u_core->cleaner_thread=NULL;
+	}
 	return;
 }
 
