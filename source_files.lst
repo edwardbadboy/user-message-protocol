@@ -1,7 +1,8 @@
 F:\Code\user_message_protocol\user_message_protocol\ump_sock.c
 F:\Code\user_message_protocol\user_message_protocol\upacket.c
 F:\Code\user_message_protocol\user_message_protocol\ump.c
-F:\Code\user_message_protocol\user_message_protocol\ump_sock.h
+F:\Code\user_message_protocol\user_message_protocol\ump_sock_public.h
+F:\Code\user_message_protocol\user_message_protocol\ump_sock_private.h
 F:\Code\user_message_protocol\test_ump\test_ump.c
 F:\Code\user_message_protocol\user_message_protocol\core_thread.c
 F:\Code\user_message_protocol\user_message_protocol\ump_misc.c
