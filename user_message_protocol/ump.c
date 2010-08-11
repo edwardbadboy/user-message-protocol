@@ -120,7 +120,7 @@ UMP_DLLDES UMPCore* ump_core_bind(struct sockaddr_in *our_addr,int backlog)
     return u_core;
 }
 
-//ÊÍ·Å×ÊÔ´£¬¹Ø±ÕËùÓÐµÄÏß³Ì
+//é‡Šæ”¾èµ„æºï¼Œå…³é—­æ‰€æœ‰çš„çº¿ç¨‹
 UMP_DLLDES void ump_core_close(UMPCore* u_core)
 {
 	ump_stop_background_threads_and_socket(u_core);
@@ -161,7 +161,7 @@ UMP_DLLDES UMPSocket* ump_connect(UMPCore* u_core,struct sockaddr_in *their_addr
 	gboolean connect_r=FALSE;
 
 	g_mutex_lock(u_core->umps_lock);
-	//Èç¹ûÖ÷¶¯Á¬½Ó¡¢»î¶¯Á¬½Ó¡¢ÒÑ¹Ø±Õ±íÖÐÒÑ´æÔÚtheir_addr£¬Ö±½Ó·µ»Ø´íÎó
+	//å¦‚æžœä¸»åŠ¨è¿žæŽ¥ã€æ´»åŠ¨è¿žæŽ¥ã€å·²å…³é—­è¡¨ä¸­å·²å­˜åœ¨their_addrï¼Œç›´æŽ¥è¿”å›žé”™è¯¯
 	if(g_hash_table_lookup(u_core->act_connect,their_addr)!=NULL){
 		g_mutex_unlock(u_core->umps_lock);
 		return NULL;
@@ -174,13 +174,13 @@ UMP_DLLDES UMPSocket* ump_connect(UMPCore* u_core,struct sockaddr_in *their_addr
 		g_mutex_unlock(u_core->umps_lock);
 		return NULL;
 	}
-	//Èç¹ûºó±¸¶ÓÁÐÖÐÒÑ´æÔÚtheir_addr£¬½«ÆäÒÆ¶¯µ½Ö÷¶¯Á¬½Ó±íÖÐ
+	//å¦‚æžœåŽå¤‡é˜Ÿåˆ—ä¸­å·²å­˜åœ¨their_addrï¼Œå°†å…¶ç§»åŠ¨åˆ°ä¸»åŠ¨è¿žæŽ¥è¡¨ä¸­
 	u_sock=g_hash_table_lookup(u_core->backlog_umps,their_addr);
 	if(u_sock!=NULL){
 		g_hash_table_remove(u_core->backlog_umps,their_addr);
 		ump_sock_lock_public_state(u_sock);
 			if(ump_sock_public_state(u_sock)==UMP_CLOSED || ump_sock_public_state(u_sock)==UMP_CLOSING){
-				//´¦ÀíÒ»ÖÖÌØÊâÇé¿ö£¬ºó±¸¶ÓÁÐÖÐµÄÁ¬½Ó±»Ö÷¶¯¹Ø±Õ£¬¶øÎÒÃÇÈ´¿ªÊ¼Ö÷¶¯Á¬½Ó
+				//å¤„ç†ä¸€ç§ç‰¹æ®Šæƒ…å†µï¼ŒåŽå¤‡é˜Ÿåˆ—ä¸­çš„è¿žæŽ¥è¢«ä¸»åŠ¨å…³é—­ï¼Œè€Œæˆ‘ä»¬å´å¼€å§‹ä¸»åŠ¨è¿žæŽ¥
 				ump_sock_unlock_public_state(u_sock);
 				g_mutex_unlock(u_core->umps_lock);
 				return NULL;
@@ -214,7 +214,7 @@ UMP_DLLDES UMPSocket* ump_accept(UMPCore* u_core)
 	UMPSocket* u_s=NULL;
 	UMPSocket* s=NULL;
 	while(u_s==NULL){
-		//Ëøºó±¸¶ÓÁÐ£¬¼ì²éÊÇ·ñÓÐ¿ÉÓÃµÄÁ¬½Ó£¬È¡³öÁ¬½Ó£¬·Åµ½Á¬½Ó¹þÏ£±íÖÐ¡£Èç¹ûÃ»ÓÐµÈ´ý±»»½ÐÑ¡£
+		//é”åŽå¤‡é˜Ÿåˆ—ï¼Œæ£€æŸ¥æ˜¯å¦æœ‰å¯ç”¨çš„è¿žæŽ¥ï¼Œå–å‡ºè¿žæŽ¥ï¼Œæ”¾åˆ°è¿žæŽ¥å“ˆå¸Œè¡¨ä¸­ã€‚å¦‚æžœæ²¡æœ‰ç­‰å¾…è¢«å”¤é†’ã€‚
 		m_event_wait(u_core->accept_ok);
 		g_mutex_lock(u_core->umps_lock);
 			g_hash_table_iter_init (&iter,u_core->backlog_umps);
@@ -226,7 +226,7 @@ UMP_DLLDES UMPSocket* ump_accept(UMPCore* u_core)
 						if(u_s==NULL){
 							u_s=s;
 						}else{
-							//ËÑË÷ºó±¸¶ÓÁÐÖÐ×îÔç½¨Á¢ºÃµÄÁ¬½Ó
+							//æœç´¢åŽå¤‡é˜Ÿåˆ—ä¸­æœ€æ—©å»ºç«‹å¥½çš„è¿žæŽ¥
 							if(ump_time_sub(ump_sock_connect_time(u_s),ump_sock_connect_time(s))>0){
 								u_s=s;
 							}
@@ -322,7 +322,7 @@ UMP_DLLDES int ump_send_message(UMPSocket* u_connection,void * data,int data_len
 #else
 	g_free(pkts);
 #endif
-	//·µ»Ø-1±íÊ¾Ê§°Ü£¬0±íÊ¾³É¹¦
+	//è¿”å›ž-1è¡¨ç¤ºå¤±è´¥ï¼Œ0è¡¨ç¤ºæˆåŠŸ
 	if(result!=TRUE){
 		return -1;
 	}
@@ -362,10 +362,10 @@ UMP_DLLDES void ump_set_log_stream(FILE* f)
 
 static void ump_stop_background_threads_and_socket(UMPCore *u_core)
 {
-	//´ò¶ÏºóÌ¨Ïß³Ì
-	m_event_broadcast(u_core->stop_work);//´ò¶ÏÇåÀíÏß³Ì
+	//æ‰“æ–­åŽå°çº¿ç¨‹
+	m_event_broadcast(u_core->stop_work);//æ‰“æ–­æ¸…ç†çº¿ç¨‹
 
-	closesocket(u_core->s);//´ò¶Ï½ÓÊÕÊý¾Ý±¨µÄÏß³Ì
+	closesocket(u_core->s);//æ‰“æ–­æŽ¥æ”¶æ•°æ®æŠ¥çš„çº¿ç¨‹
 	u_core->s=INVALID_SOCKET;
 
 	if(u_core->rec_thread!=NULL){

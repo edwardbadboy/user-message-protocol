@@ -38,14 +38,14 @@ typedef enum _ump_packet_direction
 struct _ump_packet;
 typedef struct _ump_packet UMPPacket;
 
-gpointer u_packet_to_binary(UMPPacket* u_packet,gint* raw_data_l);//执行过以后，返回新分配的内存，结构体内的raw_data会指向分配的raw_data，若raw_data已有数据，则先释放原来的数据
-UMPPacket* u_packet_from_binary(gpointer raw_data,gint raw_data_l);//执行过以后，返回新分配的P_INCOMMING的UMPPacket，结构体内的raw_data会指向输入的raw_data
+gpointer u_packet_to_binary(UMPPacket* u_packet,gint* raw_data_l);//鎵ц杩囦互鍚庯紝杩斿洖鏂板垎閰嶇殑鍐呭瓨锛岀粨鏋勪綋鍐呯殑raw_data浼氭寚鍚戝垎閰嶇殑raw_data锛岃嫢raw_data宸叉湁鏁版嵁锛屽垯鍏堥噴鏀惧師鏉ョ殑鏁版嵁
+UMPPacket* u_packet_from_binary(gpointer raw_data,gint raw_data_l);//鎵ц杩囦互鍚庯紝杩斿洖鏂板垎閰嶇殑P_INCOMMING鐨刄MPPacket锛岀粨鏋勪綋鍐呯殑raw_data浼氭寚鍚戣緭鍏ョ殑raw_data
 gboolean u_packet_get_flag(UMPPacket* u_packet,guint8 flag_mask);
 void u_packet_set_flag(UMPPacket* u_packet,guint8 flag_mask);
 void u_packet_clear_flag(UMPPacket* u_packet,guint8 flag_mask);
 void u_packet_set_data(UMPPacket* u_packet,gpointer user_data,gint data_len);
 UMPPacket* u_packet_new(UMPPacketType p_type,UMPPacketDirection p_direction);
-void u_packet_free(UMPPacket* u_packet);//会自动释放它自己的raw_data
+void u_packet_free(UMPPacket* u_packet);//浼氳嚜鍔ㄩ噴鏀惧畠鑷繁鐨剅aw_data
 //UMPPacketType u_packet_get_type(UMPPacket* u_packet);
 //void u_packet_set_acknum(UMPPacket* u_packet,guint16 acknum);
 //guint16 u_packet_get_acknum(UMPPacket* u_packet);

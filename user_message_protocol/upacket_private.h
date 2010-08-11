@@ -8,15 +8,15 @@ typedef struct _ump_packet
 	UMPPacketDirection direction;
 	guchar ctrl_flags1;
 	guchar ctrl_flags2;
-	guchar data_flags;//µÍ8Î»²»ÓÃ£¬Êä³öµÄÊ±ºòÖ»Õ¼8Î»
+	guchar data_flags;//ä½8ä½ä¸ç”¨ï¼Œè¾“å‡ºçš„æ—¶å€™åªå 8ä½
 	guint16 check_sum;
 	guint16 seq_num;
 	guint16 ack_num;
 	guint16 mss_num;
 	guint16 wnd_num;
-	gpointer user_data;//·½ÏòÎªoutgoingÊ±£¬Ö¸ÏòÓÃ»§Êı¾İ£»ÆäËûÊ±£¬Ö¸Ïòraw_dataµÄÓÃ»§Êı¾İÆğÊ¼´¦
+	gpointer user_data;//æ–¹å‘ä¸ºoutgoingæ—¶ï¼ŒæŒ‡å‘ç”¨æˆ·æ•°æ®ï¼›å…¶ä»–æ—¶ï¼ŒæŒ‡å‘raw_dataçš„ç”¨æˆ·æ•°æ®èµ·å§‹å¤„
 	gint user_data_l;
-	gpointer raw_data;//ÎªÊäÈë/Êä³ö´Ë½á¹¹ÌåµÄÔ­Ê¼2½øÖÆÊı¾İ
+	gpointer raw_data;//ä¸ºè¾“å…¥/è¾“å‡ºæ­¤ç»“æ„ä½“çš„åŸå§‹2è¿›åˆ¶æ•°æ®
 	gint raw_data_l;
 }UMPPacket;
 #endif

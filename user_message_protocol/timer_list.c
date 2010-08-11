@@ -28,7 +28,7 @@ void tm_register_packet(GList** tl,guint16 seq,glong rto)
 	*tl=g_list_append(*tl,te);
 }
 
-//·µ»ØÖµ<0£¬ackÊ§°Ü£¬ÆäÓàÇé¿ö£¬·µ»Ørtt
+//è¿”å›žå€¼<0ï¼Œackå¤±è´¥ï¼Œå…¶ä½™æƒ…å†µï¼Œè¿”å›žrtt
 glong tm_ack_packet(GList** tl,guint16 seq,guint16 upper_bound_seq)
 {
 	GList* head;
@@ -93,7 +93,7 @@ glong tm_ack_packet(GList** tl,guint16 seq,guint16 upper_bound_seq)
 	return rtt;
 }
 
-//·µ»ØÖµ>=0
+//è¿”å›žå€¼>=0
 glong tm_get_next_event(GList** tl)
 {
 	TmEntry* t_entry;
@@ -106,7 +106,7 @@ glong tm_get_next_event(GList** tl)
 	return MAX(ump_time_sub(&t_entry->fire_time,&cur_t),0);
 }
 
-//·µ»ØFALSE£¬ÎÞ³¬Ê±£¬·µ»ØTRUE£¬ÓÐ³¬Ê±²¢ÉèÖÃtimeout_seq
+//è¿”å›žFALSEï¼Œæ— è¶…æ—¶ï¼Œè¿”å›žTRUEï¼Œæœ‰è¶…æ—¶å¹¶è®¾ç½®timeout_seq
 gboolean get_next_timeout(GList** tl,guint16* timeout_seq)
 {
 	GTimeVal cur_t;

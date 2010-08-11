@@ -108,12 +108,12 @@ static guint ump_sock_fetch_received_packets(UMPSocket* u_s,glong* sleep_ms)
 		if(g_queue_is_empty(u_s->rec_control_packets)==FALSE || g_queue_is_empty(u_s->rec_data_packets)==FALSE){
 			*sleep_ms=0;
 		}
-		while(g_queue_is_empty(u_s->rec_control_packets)==FALSE && u_s->local_ctrl_packets==NULL){//ÏŞÖÆ±¾µØÁ´±í³¤¶ÈÎª1
+		while(g_queue_is_empty(u_s->rec_control_packets)==FALSE && u_s->local_ctrl_packets==NULL){//é™åˆ¶æœ¬åœ°é“¾è¡¨é•¿åº¦ä¸º1
 			u_s->local_ctrl_packets=g_list_append(u_s->local_ctrl_packets,g_queue_pop_tail(u_s->rec_control_packets));
 		}
-		while(g_queue_is_empty(u_s->rec_data_packets)==FALSE && u_s->local_data_packets_count<=LOCAL_DATA_PACKET_LIMIT){//ÏŞÖÆ±¾µØÁ´±í³¤¶ÈÎªLOCAL_DATA_PACKET_LIMIT
+		while(g_queue_is_empty(u_s->rec_data_packets)==FALSE && u_s->local_data_packets_count<=LOCAL_DATA_PACKET_LIMIT){//é™åˆ¶æœ¬åœ°é“¾è¡¨é•¿åº¦ä¸ºLOCAL_DATA_PACKET_LIMIT
 			u_s->local_data_packets=ump_list_append(u_s->local_data_packets,g_queue_pop_tail(u_s->rec_data_packets),&(u_s->local_data_packets_count));
-			//½«À´´ÓÁ´±íÖĞÉ¾³ı½ÚµãÊ±£¬Ê¹ÓÃump_list_remove_link
+			//å°†æ¥ä»é“¾è¡¨ä¸­åˆ é™¤èŠ‚ç‚¹æ—¶ï¼Œä½¿ç”¨ump_list_remove_link
 		}
 		buffer_load=g_queue_get_length(u_s->rec_data_packets);
 	g_mutex_unlock(u_s->rec_packets_lock);
@@ -132,7 +132,7 @@ UMPSocket* ump_sock_new(UMPCore* u_core,struct sockaddr_in *their_addr)
 	//memset(u_sock,0,sizeof(UMPSocket));
 	u_sock->u_core=u_core;
 	u_sock->their_addr=(*their_addr);
-	//mutex¡¢event¡¢queueµÈµÄ³õÊ¼»¯£¬Ïß³ÌµÄÆô¶¯
+	//mutexã€eventã€queueç­‰çš„åˆå§‹åŒ–ï¼Œçº¿ç¨‹çš„å¯åŠ¨
 	u_sock->public_state_lock=g_mutex_new();
 	u_sock->state=UMP_CLOSED;
 	ump_sock_lock_public_state(u_sock);
@@ -184,8 +184,8 @@ UMPSocket* ump_sock_new(UMPCore* u_core,struct sockaddr_in *their_addr)
 }
 
 
-//ump_sock_freeÄ¿Ç°Ö»»áÓÉÖ÷ÇåÀíÏß³Ì¡¢Ö÷½ÓÊÕÏß³Ìµ÷ÓÃ»òÓÃ»§Ïß³ÌÍ¨¹ıump_connectµ÷ÓÃ
-//µ÷ÓÃÇ°±ØĞëËø¶¨sockËùÔÚµÄ¹şÏ£±í£¬ÒÔ±ÜÃâÊı¾İËğ»Ù
+//ump_sock_freeç›®å‰åªä¼šç”±ä¸»æ¸…ç†çº¿ç¨‹ã€ä¸»æ¥æ”¶çº¿ç¨‹è°ƒç”¨æˆ–ç”¨æˆ·çº¿ç¨‹é€šè¿‡ump_connectè°ƒç”¨
+//è°ƒç”¨å‰å¿…é¡»é”å®šsockæ‰€åœ¨çš„å“ˆå¸Œè¡¨ï¼Œä»¥é¿å…æ•°æ®æŸæ¯
 void ump_sock_free(UMPSocket* u_sock)
 {
 	UMPPacket* p;
@@ -197,9 +197,9 @@ void ump_sock_free(UMPSocket* u_sock)
 		m_event_set(u_sock->do_work_event);
 		g_thread_join(u_sock->sock_thread);
 	}
-	//Ö´ĞĞÇåÀí¹¤×÷£¬ÊÍ·Å¿ØÖÆµ÷ÓÃËøºÍÆäËûËø
+	//æ‰§è¡Œæ¸…ç†å·¥ä½œï¼Œé‡Šæ”¾æ§åˆ¶è°ƒç”¨é”å’Œå…¶ä»–é”
 
-	//ÒªÏòÓÃ»§µÄ¿ØÖÆÏß³Ì±¨¸æ¿ØÖÆÊ§°Ü
+	//è¦å‘ç”¨æˆ·çš„æ§åˆ¶çº¿ç¨‹æŠ¥å‘Šæ§åˆ¶å¤±è´¥
 	ump_end_ctrl(u_sock,METHOD_ALL_CALL,FALSE);
 	ump_end_send(u_sock,FALSE);
 	ump_end_receive(u_sock,FALSE);
@@ -282,7 +282,7 @@ gboolean ump_sock_close(UMPSocket* u_sock)
 	return r;
 }
 
-//¼ÓËø£¬½«²ÎÊı·ÅÖÃµ½UMPSocketÀï£¬È»ºó¼¤·¢£¬½Ó×ÅµÈ´ı
+//åŠ é”ï¼Œå°†å‚æ•°æ”¾ç½®åˆ°UMPSocketé‡Œï¼Œç„¶åæ¿€å‘ï¼Œæ¥ç€ç­‰å¾…
 gboolean ump_sock_send(UMPSocket* u_sock,UMPPacket** data_packets,gint packets_count)
 {
 	g_mutex_lock(u_sock->snd_para_lock);
@@ -298,7 +298,7 @@ gboolean ump_sock_send(UMPSocket* u_sock,UMPPacket** data_packets,gint packets_c
 	return u_sock->snd_ok;
 }
 
-//¼ÓËø£¬½«²ÎÊı·ÅÖÃµ½UMPSocketÀï£¬È»ºó¼¤·¢£¬½Ó×ÅµÈ´ı
+//åŠ é”ï¼Œå°†å‚æ•°æ”¾ç½®åˆ°UMPSocketé‡Œï¼Œç„¶åæ¿€å‘ï¼Œæ¥ç€ç­‰å¾…
 gchar* ump_sock_receive(UMPSocket* u_sock,gint *rec_len)
 {
 	gchar* data=NULL;
@@ -396,7 +396,7 @@ static void ump_handle_send_ctrl_packet(UMPSocket* u_sock,glong* sleep_ms)
 	UMPPacket* ctrl_ack_alone=NULL;
 	gint send_r=0;
 	if(u_sock->ctrl_packet_sent==FALSE && u_sock->ctrl_packet_to_send!=NULL){
-		//ÉÓ´øctrl_ack
+		//æå¸¦ctrl_ack
 		if(u_sock->ack_info.ctrl_ack_set==TRUE){
 			u_packet_set_flag(u_sock->ctrl_packet_to_send,UP_CTRL_ACK);
 			u_sock->ctrl_packet_to_send->ack_num=u_sock->ack_info.ctrl_ack_data;
@@ -410,7 +410,7 @@ static void ump_handle_send_ctrl_packet(UMPSocket* u_sock,glong* sleep_ms)
 		send_r=ump_sendto(u_sock->u_core,data,data_len,&u_sock->their_addr);
 		u_sock->ctrl_packet_sent=TRUE;
 	}else{
-		//µ¥¶À·¢ËÍctrl_ack£¬ÁÙÊ±¹¹ÔìÒ»¸ö°ü£¬·¢ËÍ³öÈ¥£¬ÔÙÊÍ·ÅÄÚ´æ
+		//å•ç‹¬å‘é€ctrl_ackï¼Œä¸´æ—¶æ„é€ ä¸€ä¸ªåŒ…ï¼Œå‘é€å‡ºå»ï¼Œå†é‡Šæ”¾å†…å­˜
 		if(u_sock->ack_info.ctrl_ack_set){
 			ctrl_ack_alone=u_packet_new(P_CONTROL,P_OUTGOING);
 			u_packet_set_flag(ctrl_ack_alone,UP_CTRL_ACK);
@@ -440,7 +440,7 @@ static void ump_handle_ctrl_packet(UMPSocket* u_sock,glong* sleep_ms)
 			log_out("got FIN\n");
 		}
 #endif
-		if(u_packet_get_flag(p,UP_CTRL_RST)==TRUE){//´¦Àírst±¨ÎÄ£¬½áÊøËùÓĞµ÷ÓÃ£¬½«×´Ì¬ÇĞ»»Îªclosed
+		if(u_packet_get_flag(p,UP_CTRL_RST)==TRUE){//å¤„ç†rstæŠ¥æ–‡ï¼Œç»“æŸæ‰€æœ‰è°ƒç”¨ï¼Œå°†çŠ¶æ€åˆ‡æ¢ä¸ºclosed
 			u_packet_free(p);
 			p=NULL;
 			g_list_free(first);
@@ -448,7 +448,7 @@ static void ump_handle_ctrl_packet(UMPSocket* u_sock,glong* sleep_ms)
 			ump_connection_error_occured(u_sock);
 			break;
 		}
-		//µ÷ÓÃ×´Ì¬»ú
+		//è°ƒç”¨çŠ¶æ€æœº
 		u_sm_funcs[u_sock->state].sm_handle_ctrl_packet(u_sock,p,sleep_ms);
 		u_packet_free(p);
 		p=NULL;
@@ -468,7 +468,7 @@ static void ump_end_ctrl(UMPSocket* u_sock,UMPCallMethod call_method, gboolean c
 	return;
 }
 
-///////////////////////////control lock×´Ì¬»ú
+///////////////////////////control lockçŠ¶æ€æœº
 static void ump_change_ctrllock_state(UMPSocket* u_sock,UMPLockState s)
 {
 	u_ctrl_sm_funcs[u_sock->ctrl_locked].ctrllock_sm_leave_state(u_sock);
@@ -477,23 +477,23 @@ static void ump_change_ctrllock_state(UMPSocket* u_sock,UMPLockState s)
 	return;
 }
 
-///////////////////////ctrl unlocked×´Ì¬»ú
+///////////////////////ctrl unlockedçŠ¶æ€æœº
 static void ump_ctrlunlocked_handle_ctrl(UMPSocket* u_sock,glong* sleep_ms)
 {
 	gboolean locked=FALSE;
-	locked=g_mutex_trylock(u_sock->ctrl_para_lock);//¼ÇµÃµ÷ÓÃÍê³ÉºóÊÍ·ÅËø£¬ÉèÖÃÊÂ¼ş£¬²¢ÈÃlock_ok=FALSE
+	locked=g_mutex_trylock(u_sock->ctrl_para_lock);//è®°å¾—è°ƒç”¨å®Œæˆåé‡Šæ”¾é”ï¼Œè®¾ç½®äº‹ä»¶ï¼Œå¹¶è®©lock_ok=FALSE
 	if(locked){
-		//¼ì²âÓÃ»§ÊÇ·ñ·¢³öÁËctrlµ÷ÓÃ
+		//æ£€æµ‹ç”¨æˆ·æ˜¯å¦å‘å‡ºäº†ctrlè°ƒç”¨
 		if(u_sock->ctrl_para!=NULL){
 			ump_change_ctrllock_state(u_sock,UMP_LOCKED);
 			if(u_sock->error_occured==TRUE){
 				u_ctrl_sm_funcs[u_sock->ctrl_locked].ctrllock_sm_end_ctrl(u_sock,METHOD_ALL_CALL,FALSE);
 			}else{
-				//»ñÈ¡ÁËctrlËø£¬¸ù¾İÁ¬½Ó×´Ì¬»úÖ´ĞĞµ÷ÓÃ
+				//è·å–äº†ctrlé”ï¼Œæ ¹æ®è¿æ¥çŠ¶æ€æœºæ‰§è¡Œè°ƒç”¨
 				u_sm_funcs[u_sock->state].sm_handle_ctrl(u_sock,sleep_ms);
 			}
 		}else{
-			//Ã»ÓĞctrlµ÷ÓÃ
+			//æ²¡æœ‰ctrlè°ƒç”¨
 			g_mutex_unlock(u_sock->ctrl_para_lock);
 		}
 	}
@@ -516,10 +516,10 @@ static void ump_ctrlunlocked_end_ctrl(UMPSocket* u_sock,UMPCallMethod call_metho
 	return;
 }
 
-///////////////////////ctrl locked×´Ì¬»ú
+///////////////////////ctrl lockedçŠ¶æ€æœº
 static void ump_ctrlocked_handle_ctrl(UMPSocket* u_sock,glong* sleep_ms)
 {
-	//ÒÑ¾­»ñÈ¡ÁËlock²¢ÇÒÔÚ»ñÈ¡Ê±Ö´ĞĞ¹ıµ÷ÓÃ£¬ÏÖÔÚÊ²Ã´Ò²²»×ö£¬²»ÖØ¸´Ö´ĞĞµ÷ÓÃ¡£
+	//å·²ç»è·å–äº†lockå¹¶ä¸”åœ¨è·å–æ—¶æ‰§è¡Œè¿‡è°ƒç”¨ï¼Œç°åœ¨ä»€ä¹ˆä¹Ÿä¸åšï¼Œä¸é‡å¤æ‰§è¡Œè°ƒç”¨ã€‚
 	return;
 }
 
@@ -562,7 +562,7 @@ static void ump_handle_send_data(UMPSocket* u_sock,glong* sleep_ms){
 	return;
 }
 
-///////////////////////////send lock×´Ì¬»ú
+///////////////////////////send lockçŠ¶æ€æœº
 static void ump_change_sndlock_state(UMPSocket* u_sock,UMPLockState s)
 {
 	u_snd_sm_funcs[u_sock->snd_locked].sndlock_sm_leave_state(u_sock);
@@ -571,7 +571,7 @@ static void ump_change_sndlock_state(UMPSocket* u_sock,UMPLockState s)
 	return;
 }
 
-//////////////////////////snd unlocked×´Ì¬»ú
+//////////////////////////snd unlockedçŠ¶æ€æœº
 static void ump_sndunlocked_handle_snd(UMPSocket* u_sock,glong* sleep_ms)
 {
 	gboolean locked=FALSE;
@@ -584,7 +584,7 @@ static void ump_sndunlocked_handle_snd(UMPSocket* u_sock,glong* sleep_ms)
 		return;
 	}
 	if(u_sock->snd_packets==NULL){
-		//Ã»ÓĞsndµ÷ÓÃ
+		//æ²¡æœ‰sndè°ƒç”¨
 		g_mutex_unlock(u_sock->snd_para_lock);
 		return;
 	}
@@ -593,7 +593,7 @@ static void ump_sndunlocked_handle_snd(UMPSocket* u_sock,glong* sleep_ms)
 	log_out("send locked\r\n");
 #endif
 
-	//ÇĞ»»×´Ì¬»ú×´Ì¬
+	//åˆ‡æ¢çŠ¶æ€æœºçŠ¶æ€
 	ump_change_sndlock_state(u_sock,UMP_LOCKED);
 
 	if(u_sock->snd_packets_count<1 || u_sock->state!=UMP_ESTABLISHED || u_sock->error_occured==TRUE){
@@ -601,20 +601,20 @@ static void ump_sndunlocked_handle_snd(UMPSocket* u_sock,glong* sleep_ms)
 		return;
 	}
 
-	//ÎªÊı¾İ°ü±àºÅ
+	//ä¸ºæ•°æ®åŒ…ç¼–å·
 	for(i=0;i<u_sock->snd_packets_count;++i,++seq){
 		u_packet_set_flag(u_sock->snd_packets[i],UP_DATA_SEQ);
 		u_sock->snd_packets[i]->seq_num=seq;
 	}
 
-	//Ò»ÅúÊı¾İ±¨ÖĞµÄ×îºóÒ»¸öÒÔBDR±êÖ¾
+	//ä¸€æ‰¹æ•°æ®æŠ¥ä¸­çš„æœ€åä¸€ä¸ªä»¥BDRæ ‡å¿—
 	u_packet_set_flag(u_sock->snd_packets[u_sock->snd_packets_count-1],UP_DATA_BDR);
 	
-	//¼ÇÂ¼´Ë×éÊı¾İ±¨µÄÄ©seq
+	//è®°å½•æ­¤ç»„æ•°æ®æŠ¥çš„æœ«seq
 	u_sock->our_msg_last_seq=--seq;
 
 	u_sock->our_data_pos=0;
-	//¸üĞÂ·¢ËÍ´°¿Ú
+	//æ›´æ–°å‘é€çª—å£
 	ump_refresh_snd_wnd_pos(u_sock);
 
 	return;
@@ -637,7 +637,7 @@ static void ump_sndunlocked_handle_send_data(UMPSocket* u_sock,glong* sleep_ms)
 	gint data_len;
 	gpointer data=NULL;
 	UMPPacket* data_ack_alone=NULL;
-	//µ¥¶À·¢ËÍack
+	//å•ç‹¬å‘é€ack
 	if(u_sock->ack_info.data_ack_set){
 #ifdef VERBOSE
 		log_out("sending ack alone unlocked\r\n");
@@ -651,7 +651,7 @@ static void ump_sndunlocked_handle_send_data(UMPSocket* u_sock,glong* sleep_ms)
 	return;
 }
 
-///////////////////////snd locked×´Ì¬»ú
+///////////////////////snd lockedçŠ¶æ€æœº
 static void ump_sndlocked_handle_snd(UMPSocket* u_sock,glong* sleep_ms){
 	//Do nothing
 	//log_out("send already locked\r\n");
@@ -691,7 +691,7 @@ static void ump_sndlocked_handle_send_data(UMPSocket* u_sock,glong* sleep_ms)
 	UMPPacket* data_ack_alone=NULL;
 
 	if(u_sock->our_data_pos<u_sock->our_wnd_pos){
-		//ÉÓ´øack
+		//æå¸¦ack
 		if(u_sock->ack_info.data_ack_set==TRUE){
 #ifdef VERBOSE
 			log_out("sending data seq %u and ack locked\r\n",(u_sock->snd_packets[u_sock->our_data_pos])->seq_num);
@@ -709,12 +709,12 @@ static void ump_sndlocked_handle_send_data(UMPSocket* u_sock,glong* sleep_ms)
 		ump_sendto(u_sock->u_core,data,data_len,&u_sock->their_addr);
 		ump_refresh_data_sent(u_sock,u_sock->snd_packets[u_sock->our_data_pos]->seq_num);
 		++(u_sock->our_data_pos);
-		*sleep_ms=0;//´°¿ÚÃ»ÓÃÍê£¬ÉÔºó»¹Òª¼ÌĞø·¢ËÍ£¬ËùÒÔÏß³Ì¾Í²»ÄÜĞİÏ¢ÁË
+		*sleep_ms=0;//çª—å£æ²¡ç”¨å®Œï¼Œç¨åè¿˜è¦ç»§ç»­å‘é€ï¼Œæ‰€ä»¥çº¿ç¨‹å°±ä¸èƒ½ä¼‘æ¯äº†
 	}else{
 #ifdef VERBOSE1
 		log_out("send window exhausted\n");
 #endif
-		//µ¥¶À·¢ËÍack
+		//å•ç‹¬å‘é€ack
 		if(u_sock->ack_info.data_ack_set==TRUE){
 #ifdef VERBOSE
 			log_out("sending ack alone locked\r\n");
@@ -743,7 +743,7 @@ static void ump_end_receive(UMPSocket* u_sock,gboolean rec_result){
 	return;
 }
 
-//Ç°¼ş£ºu_sock->rec_msg_packets!=NULLÇÒu_sock->rec_msg¡¢u_sock->rec_msg_lÖĞÃ»ÓĞÓĞĞ§Êı¾İ
+//å‰ä»¶ï¼šu_sock->rec_msg_packets!=NULLä¸”u_sock->rec_msgã€u_sock->rec_msg_lä¸­æ²¡æœ‰æœ‰æ•ˆæ•°æ®
 static void ump_end_receive_internal(UMPSocket* u_sock)
 {
 	GList* rec_p=NULL;
@@ -776,7 +776,7 @@ static void ump_end_receive_internal(UMPSocket* u_sock)
 	return;
 }
 
-///////////////////////////rec lock×´Ì¬»ú
+///////////////////////////rec lockçŠ¶æ€æœº
 static void ump_change_reclock_state(UMPSocket* u_sock,UMPLockState s)
 {
 	u_rec_sm_funcs[u_sock->rec_locked].reclock_sm_leave_state(u_sock);
@@ -785,7 +785,7 @@ static void ump_change_reclock_state(UMPSocket* u_sock,UMPLockState s)
 	return;
 }
 
-//////////////////////////rec unlocked×´Ì¬»ú
+//////////////////////////rec unlockedçŠ¶æ€æœº
 static void ump_recunlocked_handle_rec(UMPSocket* u_sock,glong* sleep_ms)
 {
 	gboolean locked=FALSE;
@@ -796,7 +796,7 @@ static void ump_recunlocked_handle_rec(UMPSocket* u_sock,glong* sleep_ms)
 		return;
 	}
 	if(u_sock->receive_called==FALSE){
-		//Ã»ÓĞreceiveµ÷ÓÃ
+		//æ²¡æœ‰receiveè°ƒç”¨
 		g_mutex_unlock(u_sock->rec_para_lock);
 		return;
 	}
@@ -815,7 +815,7 @@ static void ump_recunlocked_handle_rec(UMPSocket* u_sock,glong* sleep_ms)
 		m_event_set(u_sock->rec_done);
 		return;
 	}
-	//ÇĞ»»×´Ì¬»ú×´Ì¬
+	//åˆ‡æ¢çŠ¶æ€æœºçŠ¶æ€
 	ump_change_reclock_state(u_sock,UMP_LOCKED);
 	return;
 }
@@ -833,7 +833,7 @@ static void ump_recunlocked_end_rec(UMPSocket* u_sock,gboolean rec_result)
 	return;
 }
 
-///////////////////////rec locked×´Ì¬»ú
+///////////////////////rec lockedçŠ¶æ€æœº
 static void ump_reclocked_handle_rec(UMPSocket* u_sock,glong* sleep_ms){
 	return;
 }
@@ -870,35 +870,35 @@ static void ump_handle_ctrl_timeout(UMPSocket* u_sock,glong* sleep_ms)
 		return;
 	}
 	*sleep_ms=MIN((*sleep_ms),u_sock->ctrl_rto);
-	//ÅĞ¶ÏÊÇ·ñĞèÒª´¦Àí³¬Ê±
+	//åˆ¤æ–­æ˜¯å¦éœ€è¦å¤„ç†è¶…æ—¶
 	if(u_sock->ctrl_packet_sent!=TRUE){
 		return;
 	}
 	g_get_current_time(&curtime);
-	//ÅĞ¶ÏÊÇ·ñ³¬Ê±
+	//åˆ¤æ–­æ˜¯å¦è¶…æ—¶
 	if(ump_time_sub(&curtime,&(u_sock->ctrl_resend_time))<0){
 		return;
 	}
 	
-	//³¬Ê±ÁË£¬ĞèÒªÖØ·¢
+	//è¶…æ—¶äº†ï¼Œéœ€è¦é‡å‘
 	if(u_sock->ctrl_rto<TIMEOUT_LIMIT){
-		//Ò»°ãµÄ³¬Ê±
+		//ä¸€èˆ¬çš„è¶…æ—¶
 		u_sock->ctrl_packet_sent=FALSE;
-		//ÖØĞÂÉèÖÃ³¬Ê±Ê±¼ä
+		//é‡æ–°è®¾ç½®è¶…æ—¶æ—¶é—´
 		ump_timeout_refresh_ctrl_rto(u_sock);
-		//ÖØ·¢µÄ°ü½«×Ô¶¯ÓÉump_handle_send_ctrl_packet·¢ËÍ³öÈ¥
+		//é‡å‘çš„åŒ…å°†è‡ªåŠ¨ç”±ump_handle_send_ctrl_packetå‘é€å‡ºå»
 		*sleep_ms=0;
 		return;
 	}
 	
-	//Èç¹û³¬Ê±Ì«¾Ã£¬Ôò·ÅÆú·¢ËÍ
+	//å¦‚æœè¶…æ—¶å¤ªä¹…ï¼Œåˆ™æ”¾å¼ƒå‘é€
 	u_packet_free(u_sock->ctrl_packet_to_send);
 	u_sock->ctrl_packet_to_send=NULL;
 	u_sock->ctrl_packet_sent=TRUE;
 	ump_init_ctrl_rto(u_sock);
-	//ÒªÏòÓÃ»§µÄ¿ØÖÆÏß³Ì±¨¸æ·¢ËÍÊ§°Ü
+	//è¦å‘ç”¨æˆ·çš„æ§åˆ¶çº¿ç¨‹æŠ¥å‘Šå‘é€å¤±è´¥
 	ump_end_ctrl(u_sock,METHOD_ALL_CALL,FALSE);
-	//ÊÍ·ÅÁ¬½Ó£¬Í£Ö¹¹¤×÷
+	//é‡Šæ”¾è¿æ¥ï¼Œåœæ­¢å·¥ä½œ
 	ump_connection_error_occured(u_sock);
 
 	return;
@@ -915,7 +915,7 @@ static void ump_handle_data_packet(UMPSocket* u_sock,glong* sleep_ms)
 		if(u_packet_get_flag(p,UP_DATA_SEQ)==TRUE){
 			ump_set_our_ack_info(u_sock,FALSE);
 		}
-		//µ÷ÓÃ×´Ì¬»ú
+		//è°ƒç”¨çŠ¶æ€æœº
 		u_sm_funcs[u_sock->state].sm_handle_data_packet(u_sock,p,sleep_ms);
 		p=NULL;
 		g_list_free(first);
@@ -930,21 +930,21 @@ static void ump_handle_data_timeout(UMPSocket* u_sock,glong* sleep_ms)
 	gboolean tout=FALSE;
 	tout=get_next_timeout(&(u_sock->tm_list),&tout_seq);
 	if(!tout){
-		//Ã»ÓĞ³¬Ê±
+		//æ²¡æœ‰è¶…æ—¶
 		return;
 	}
 #ifdef VERBOSE
 	log_out("timeout occured\n");
 #endif
-	//³¬Ê±Ì«¶àÔò·ÅÆúÖØ·¢£¬ÏòÓÃ»§±¨¸æ´íÎó
+	//è¶…æ—¶å¤ªå¤šåˆ™æ”¾å¼ƒé‡å‘ï¼Œå‘ç”¨æˆ·æŠ¥å‘Šé”™è¯¯
 	if(rto_get_rto(u_sock->rto_cpt)>=TIMEOUT_LIMIT){
 		ump_end_send(u_sock,FALSE);
-		//ÊÍ·ÅÁ¬½Ó£¬Í£Ö¹¹¤×÷
+		//é‡Šæ”¾è¿æ¥ï¼Œåœæ­¢å·¥ä½œ
 		ump_connection_error_occured(u_sock);
 		return;
 	}
 
-	//´æÔÚ³¬Ê±
+	//å­˜åœ¨è¶…æ—¶
 	u_sock->our_ssthresh = MAX(u_sock->our_cwnd/2 , 2);
 	u_sock->our_cwnd=1;
 	ump_refresh_back_point(u_sock,ump_relative_to_seq_via_sndstartseq(u_sock,(guint)u_sock->our_data_pos));
@@ -961,7 +961,7 @@ static void ump_handle_data_timeout(UMPSocket* u_sock,glong* sleep_ms)
 static void ump_handle_wnd_notify(UMPSocket *u_sock,UMPPacket* u_p,glong *sleep_ms)
 {
 	gint old_wnd_pos=0;
-	//´¦ÀíÍ¨¸æ´°¿ÚĞÅÏ¢
+	//å¤„ç†é€šå‘Šçª—å£ä¿¡æ¯
 	if(u_packet_get_flag(u_p,UP_DATA_WND)==TRUE){
 		u_sock->their_wnd=u_p->wnd_num;
 		old_wnd_pos=u_sock->our_wnd_pos;
@@ -971,12 +971,12 @@ static void ump_handle_wnd_notify(UMPSocket *u_sock,UMPPacket* u_p,glong *sleep_
 		}
 		//if(u_sock->their_wnd==u_sock->our_data_seq_base){
 		if(u_sock->their_wnd==0){
-			//´°¿Ú¹Ø±Õ£¬´ò¿ªÖ÷¶¯Ì½²ì
+			//çª—å£å…³é—­ï¼Œæ‰“å¼€ä¸»åŠ¨æ¢å¯Ÿ
 			u_sock->act_req_wnd=TRUE;
 			g_get_current_time(&(u_sock->last_req_wnd_time));
 			*sleep_ms=MIN(*sleep_ms,REQ_WND_DELAY);
 		}else{
-			//´°¿Ú´ò¿ª£¬¹Ø±ÕÖ÷¶¯Ì½²ì
+			//çª—å£æ‰“å¼€ï¼Œå…³é—­ä¸»åŠ¨æ¢å¯Ÿ
 			u_sock->act_req_wnd=FALSE;
 		}
 	}
@@ -1004,7 +1004,7 @@ static void ump_handle_data_ack(UMPSocket *u_sock,UMPPacket* u_p,glong *sleep_ms
 			++(u_sock->ack_rep_count);
 		}
 		if(u_sock->ack_rep_count>1){
-			//¿ìËÙÖØ´«
+			//å¿«é€Ÿé‡ä¼ 
 			ump_refresh_back_point(u_sock,ump_relative_to_seq_via_sndstartseq(u_sock,(guint)u_sock->our_data_pos));
 			u_sock->our_data_pos=ump_seq_to_relative_via_sndstartseq(u_sock,u_sock->our_data_seq_base);
 			u_sock->our_cwnd=MAX(u_sock->our_ssthresh+3,1);
@@ -1014,53 +1014,53 @@ static void ump_handle_data_ack(UMPSocket *u_sock,UMPPacket* u_p,glong *sleep_ms
 			rto_timeout_occur(u_sock->rto_cpt);
 			*sleep_ms=0;
 		}
-		//¼ì²éackÊÇ·ñÔÚºÏ·¨·¶Î§Ö®ÄÚ
+		//æ£€æŸ¥ackæ˜¯å¦åœ¨åˆæ³•èŒƒå›´ä¹‹å†…
 		ack_diff=ump_cmp_in_sndbase(u_sock,ack_seq,u_sock->our_data_seq_base);
 		if(ack_diff<0 || ump_cmp_in_sndbase(u_sock,ack_seq,u_sock->our_data_sent)>1){
 			return;
 		}
 		if(ack_diff>0){
-			//ÓĞĞÂµÄackµ½À´
+			//æœ‰æ–°çš„ackåˆ°æ¥
 			u_sock->our_data_seq_base=ack_seq;
 			u_sock->ack_rep_count=0;
-			//Îªback_pointÉèÖÃµ×Ïß£¬ump_refresh_back_pointÖ»Ôö´óback_point
+			//ä¸ºback_pointè®¾ç½®åº•çº¿ï¼Œump_refresh_back_pointåªå¢å¤§back_point
 			ump_refresh_back_point(u_sock,u_sock->our_data_seq_base);
 		}
 	}
-	//ack_diff=0ºÍack_diff>0µÄÇé¿ö¶¼Òª´¦ÀíÍ¨¸æ´°¿ÚĞÅÏ¢
+	//ack_diff=0å’Œack_diff>0çš„æƒ…å†µéƒ½è¦å¤„ç†é€šå‘Šçª—å£ä¿¡æ¯
 	ump_handle_wnd_notify(u_sock,u_p,sleep_ms);
 	if(gotack==FALSE || ack_diff==0){
-		//Èç¹ûÃ»ÓĞĞÂµÄack£¬ºóÃæµÄ¾Í²»ÓÃ´¦ÀíÁË
+		//å¦‚æœæ²¡æœ‰æ–°çš„ackï¼Œåé¢çš„å°±ä¸ç”¨å¤„ç†äº†
 		return;
 	}
 
-	//´¦Àí¿ìËÙ»Ö¸´
+	//å¤„ç†å¿«é€Ÿæ¢å¤
 	if(u_sock->fast_retran==TRUE){
 		u_sock->fast_retran=FALSE;
 		u_sock->our_cwnd=MAX(u_sock->our_ssthresh,1);
 	}else{
 		if(u_sock->our_cwnd<u_sock->our_ssthresh){
-			//ÂıÆô¶¯£¬Ã¿ackÔö¼ÓÒ»´Îcwnd
+			//æ…¢å¯åŠ¨ï¼Œæ¯ackå¢åŠ ä¸€æ¬¡cwnd
 			u_sock->our_cwnd=MAX(u_sock->our_cwnd+1,u_sock->our_cwnd);
 			g_get_current_time(&(u_sock->last_refresh_cwnd));
 		}else{
 			g_get_current_time(&now);
 			est_rtt=rto_get_estimated_rtt(u_sock->rto_cpt);
 			if(ump_time_sub(&now,&(u_sock->last_refresh_cwnd))>=est_rtt){
-				//ÓµÈû±ÜÃâ£¬Ã¿rttÔö¼ÓÒ»´Îcwnd
+				//æ‹¥å¡é¿å…ï¼Œæ¯rttå¢åŠ ä¸€æ¬¡cwnd
 				u_sock->our_cwnd=MAX(u_sock->our_cwnd+1,u_sock->our_cwnd);
 				g_get_current_time(&(u_sock->last_refresh_cwnd));
 			}
 		}
 	}
-	//Ë¢ĞÂÊı¾İ·¢ËÍÖ¸Õë
+	//åˆ·æ–°æ•°æ®å‘é€æŒ‡é’ˆ
 	if(u_sock->our_data_pos<ump_seq_to_relative_via_sndstartseq(u_sock,u_sock->our_data_seq_base)){
 		u_sock->our_data_pos=ump_seq_to_relative_via_sndstartseq(u_sock,u_sock->our_data_seq_base);
 	}
-	//Ïû½â³¬Ê±ÏîÄ¿£¬Ë¢ĞÂrtt
+	//æ¶ˆè§£è¶…æ—¶é¡¹ç›®ï¼Œåˆ·æ–°rtt
 	rtt=tm_ack_packet(&(u_sock->tm_list),ack_seq,u_sock->our_data_sent);
-	if(rtt>=0){//rtt<0±íÊ¾³ö´í
-		if(ack_seq>=u_sock->our_back_point){//Ö»ÓĞ´óÓÚback_pointµÄack²Å¼ÆËãrtt
+	if(rtt>=0){//rtt<0è¡¨ç¤ºå‡ºé”™
+		if(ack_seq>=u_sock->our_back_point){//åªæœ‰å¤§äºback_pointçš„ackæ‰è®¡ç®—rtt
 			if(rtt==0){rtt=RTT_MIN_MS;}
 			rto_refresh_rtt(u_sock->rto_cpt,rtt);
 		}
@@ -1074,33 +1074,33 @@ static void ump_handle_data_ack(UMPSocket *u_sock,UMPPacket* u_p,glong *sleep_ms
 static void ump_harvest_messages(UMPSocket* u_sock)
 {
 	GList* head;
-	//Õª³ıÊı¾İ
+	//æ‘˜é™¤æ•°æ®
 	u_sock->rec_msg_packets=u_sock->rcv_data_packets;
 	u_sock->rcv_data_packets=u_sock->rcv_first_msg_end->next;
 	u_sock->rcv_first_msg_end->next=NULL;
-	//¼ì²ércv_data_so_farÊÇ·ñ±»Õª³ı
+	//æ£€æŸ¥rcv_data_so_faræ˜¯å¦è¢«æ‘˜é™¤
 	if(u_sock->rcv_data_so_far==u_sock->rcv_first_msg_end){
 		u_sock->rcv_data_so_far=NULL;
 	}
-	//×¼±¸¸üĞÂrcv_first_msg_end
+	//å‡†å¤‡æ›´æ–°rcv_first_msg_end
 	--(u_sock->rcv_packets_msg_num);
 	if(u_sock->rcv_packets_msg_num<1){
-		//Ê£ÏÂµÄÊı¾İ²»×ãÒÔÆ´³öÒ»¸öÏûÏ¢
+		//å‰©ä¸‹çš„æ•°æ®ä¸è¶³ä»¥æ‹¼å‡ºä¸€ä¸ªæ¶ˆæ¯
 		u_sock->rcv_first_msg_end=NULL;
 		return;
 	}
-	//Ê£ÏÂµÄÊı¾İ×ãÒÔÆ´³öÒ»¸ö»òÒÔÉÏÏûÏ¢£¬ÕÒµ½µÚÒ»¸öÏûÏ¢µÄ½áÎ²
+	//å‰©ä¸‹çš„æ•°æ®è¶³ä»¥æ‹¼å‡ºä¸€ä¸ªæˆ–ä»¥ä¸Šæ¶ˆæ¯ï¼Œæ‰¾åˆ°ç¬¬ä¸€ä¸ªæ¶ˆæ¯çš„ç»“å°¾
 	head=ump_list_first(u_sock->rcv_data_packets);
 	while(head!=NULL && u_packet_get_flag((UMPPacket*)(head->data),UP_DATA_BDR)==FALSE){
 		head=head->next;
 	}
-	u_sock->rcv_first_msg_end=head;//ÊÊÓÃÓÚhead==NULLµÄÌØÊâÇé¿öºÍhead!=NULLµÄÒ»°ãÇé¿ö
+	u_sock->rcv_first_msg_end=head;//é€‚ç”¨äºhead==NULLçš„ç‰¹æ®Šæƒ…å†µå’Œhead!=NULLçš„ä¸€èˆ¬æƒ…å†µ
 	return;
 }
 
 static void ump_check_rcv_data_so_far(UMPSocket* u_sock)
 {
-	//¼ì²éµ½u_sock->rcv_data_so_farÎªÖ¹ÊÇ·ñ°üº¬ÁËÍêÕûµÄÏûÏ¢
+	//æ£€æŸ¥åˆ°u_sock->rcv_data_so_farä¸ºæ­¢æ˜¯å¦åŒ…å«äº†å®Œæ•´çš„æ¶ˆæ¯
 	if(u_packet_get_flag(((UMPPacket*)(u_sock->rcv_data_so_far->data)),UP_DATA_BDR)==TRUE){
 		++(u_sock->rcv_packets_msg_num);
 		if(u_sock->rcv_packets_msg_num==1){
@@ -1180,11 +1180,11 @@ static void ump_refresh_back_point(UMPSocket* u_sock,guint16 back_point){
 
 static void ump_refresh_our_rwnd_pos(UMPSocket* u_sock){
 	if(u_sock->rcv_packets_msg_num>0 || u_sock->buffer_load> (REC_QUEUE_LIMIT/2)){
-		//Ë¢ĞÂour_rwndÊ¹our_rwnd_pos_seq²»Ôö
+		//åˆ·æ–°our_rwndä½¿our_rwnd_pos_seqä¸å¢
 		u_sock->our_rwnd=MIN(u_sock->our_rwnd,ump_cmp_in_rcvbase(u_sock,u_sock->our_rwnd_pos_seq,u_sock->their_data_seq_base))+1;
 	}else{
 		u_sock->our_rwnd=REC_QUEUE_LIMIT/2;
-		//Ë¢ĞÂour_rwnd_pos_seq
+		//åˆ·æ–°our_rwnd_pos_seq
 		u_sock->our_rwnd_pos_seq=ump_relative_to_seq_via_rcvseq(u_sock,u_sock->our_rwnd-1);
 	}
 }
@@ -1226,7 +1226,7 @@ static void ump_set_our_ack_info(UMPSocket* u_sock,gboolean push_ack)
 	if(push_ack==TRUE){
 		u_sock->ack_info.push_ack=TRUE;
 	}else{
-		if(u_sock->ack_info.schedule_ack==FALSE){//Á½´Îschedule¾Í¹¹³ÉÒ»´Îpush
+		if(u_sock->ack_info.schedule_ack==FALSE){//ä¸¤æ¬¡scheduleå°±æ„æˆä¸€æ¬¡push
 			u_sock->ack_info.schedule_ack=TRUE;
 		}else{
 			u_sock->ack_info.push_ack=TRUE;
@@ -1269,7 +1269,7 @@ static void ump_change_state(UMPSocket* u_sock,UMPSockState new_state)
 
 
 
-/////////////closed×´Ì¬»úÏà¹Øº¯Êı
+/////////////closedçŠ¶æ€æœºç›¸å…³å‡½æ•°
 static void ump_closed_handle_ctrl(UMPSocket* u_sock,glong* sleep_ms)
 {
 	//if(u_sock->ctrl_para==NULL){
@@ -1284,10 +1284,10 @@ static void ump_closed_handle_ctrl(UMPSocket* u_sock,glong* sleep_ms)
 		ump_closed_connect(u_sock);
 		ump_change_state(u_sock,UMP_CONNECTING);
 	}else if(u_sock->ctrl_para->ctrl_method==METHOD_CLOSE){
-		//ÒªÏòÓÃ»§µÄ¿ØÖÆÏß³Ì±¨¸æ¿ØÖÆ³É¹¦
+		//è¦å‘ç”¨æˆ·çš„æ§åˆ¶çº¿ç¨‹æŠ¥å‘Šæ§åˆ¶æˆåŠŸ
 		ump_end_ctrl(u_sock,METHOD_CLOSE,TRUE);
 	}else{
-		//ÒªÏòÓÃ»§µÄ¿ØÖÆÏß³Ì±¨¸æ¿ØÖÆÊ§°Ü
+		//è¦å‘ç”¨æˆ·çš„æ§åˆ¶çº¿ç¨‹æŠ¥å‘Šæ§åˆ¶å¤±è´¥
 		ump_end_ctrl(u_sock,METHOD_ALL_CALL,FALSE);
 	}
 	return;
@@ -1296,10 +1296,10 @@ static void ump_closed_handle_ctrl(UMPSocket* u_sock,glong* sleep_ms)
 static void ump_closed_handle_ctrl_packet(UMPSocket* u_sock,UMPPacket* p,glong* sleep_ms)
 {
 	UMPPacket* uppri=p;
-	//Èç¹ûÊÕµ½ÁË¶ÔflagµÄack£¬ÄÇÃ´µ÷ÓÃÍê±Ï£¬È¡ÏûËø£¬ÉèÖÃÊÂ¼ş£¬ÊÍ·Å¿ØÖÆ°ü£¬ÉèÖÃÖ¸ÕëÎªNULL
-	//Èç¹ûÊÕµ½ÁËËùÓĞ¶ÔdataµÄack£¬ÄÇÃ´µ÷ÓÃÍê±Ï£¬È¡ÏûËø£¬ÉèÖÃÊÂ¼ş£¬ÊÍ·Å±¨ÎÄ
+	//å¦‚æœæ”¶åˆ°äº†å¯¹flagçš„ackï¼Œé‚£ä¹ˆè°ƒç”¨å®Œæ¯•ï¼Œå–æ¶ˆé”ï¼Œè®¾ç½®äº‹ä»¶ï¼Œé‡Šæ”¾æ§åˆ¶åŒ…ï¼Œè®¾ç½®æŒ‡é’ˆä¸ºNULL
+	//å¦‚æœæ”¶åˆ°äº†æ‰€æœ‰å¯¹dataçš„ackï¼Œé‚£ä¹ˆè°ƒç”¨å®Œæ¯•ï¼Œå–æ¶ˆé”ï¼Œè®¾ç½®äº‹ä»¶ï¼Œé‡Šæ”¾æŠ¥æ–‡
 	if(u_sock->syn_reced==FALSE && u_packet_get_flag(p,UP_CTRL_SYN)==TRUE){
-		//»ñÈ¡SEQ¡¢MSS¡¢WNDĞÅÏ¢
+		//è·å–SEQã€MSSã€WNDä¿¡æ¯
 		if(u_packet_get_flag(p,UP_CTRL_SEQ)==TRUE){
 			u_sock->their_ctrl_seq=uppri->seq_num+1;
 			u_sock->their_data_seq_base=uppri->seq_num;//+1;
@@ -1312,9 +1312,9 @@ static void ump_closed_handle_ctrl_packet(UMPSocket* u_sock,UMPPacket* p,glong* 
 		if(u_packet_get_flag(p,UP_CTRL_WND)==TRUE){
 			u_sock->their_wnd=uppri->wnd_num;
 		}
-		//·¢ËÍÎÒÃÇµÄsyn°ü
+		//å‘é€æˆ‘ä»¬çš„synåŒ…
 		ump_closed_connect(u_sock);
-		//ÉèÖÃ»Ø¸´¸ø¶Ô·½µÄack
+		//è®¾ç½®å›å¤ç»™å¯¹æ–¹çš„ack
 		u_sock->ack_info.ctrl_ack_set=TRUE;
 		u_sock->ack_info.ctrl_ack_data=u_sock->their_ctrl_seq;
 		u_sock->syn_reced=TRUE;
@@ -1331,9 +1331,9 @@ static void ump_closed_handle_ctrl_packet(UMPSocket* u_sock,UMPPacket* p,glong* 
 	return;
 }
 
-//closed´¦ÀíÊı¾İ±¨ÎÄµÄÊ±ºò²ÉÈ¡ºöÂÔµÄ²ßÂÔ
+//closedå¤„ç†æ•°æ®æŠ¥æ–‡çš„æ—¶å€™é‡‡å–å¿½ç•¥çš„ç­–ç•¥
 static void ump_closed_handle_data_packet(UMPSocket *u_sock,UMPPacket *p,glong *sleep_ms){
-	//´¦ÀíackĞÅÏ¢
+	//å¤„ç†ackä¿¡æ¯
 	ump_handle_data_ack(u_sock,p,sleep_ms);
 	u_packet_free(p);
 	return;
@@ -1384,14 +1384,14 @@ static void ump_closed_enter_state(UMPSocket* u_sock)
 		g_get_current_time(&u_sock->close_time);
 	//g_mutex_unlock(u_sock->public_state_lock);
 
-	//»º³åÖĞµÄÊı¾İ²»×ãÒ»¸öÏûÏ¢£¬¶øÁ¬½ÓÒÑ¹Ø±Õ£¬¶ªÆúÕâĞ©Êı¾İ£¬½áÊøÎ´½ÓÊÕÍê±ÏµÄµ÷ÓÃ
+	//ç¼“å†²ä¸­çš„æ•°æ®ä¸è¶³ä¸€ä¸ªæ¶ˆæ¯ï¼Œè€Œè¿æ¥å·²å…³é—­ï¼Œä¸¢å¼ƒè¿™äº›æ•°æ®ï¼Œç»“æŸæœªæ¥æ”¶å®Œæ¯•çš„è°ƒç”¨
 	if(u_sock->rcv_packets_msg_num<1){
 		ump_end_receive(u_sock,FALSE);
 	}
 	
-	//Èç¹û´æÔÚcloseµ÷ÓÃ£¬±íÃ÷ÎÒÃÇÕıÔÚÖ´ĞĞÖ÷¶¯¹Ø±Õ£¬ÔòÊÍ·ÅËø
+	//å¦‚æœå­˜åœ¨closeè°ƒç”¨ï¼Œè¡¨æ˜æˆ‘ä»¬æ­£åœ¨æ‰§è¡Œä¸»åŠ¨å…³é—­ï¼Œåˆ™é‡Šæ”¾é”
 	u_ctrl_sm_funcs[u_sock->ctrl_locked].ctrllock_sm_end_ctrl(u_sock,METHOD_CLOSE,TRUE);
-	//·ñÔòÕıÔÚÖ´ĞĞ±»¶¯¹Ø±Õ£¬ctrl_lockedµÄ×´Ì¬Ó¦ÊÇunlocked£¬¶øunlockedµÄend_ctrlÊ²Ã´Ò²²»×öÖ±½Ó·µ»Ø¡£
+	//å¦åˆ™æ­£åœ¨æ‰§è¡Œè¢«åŠ¨å…³é—­ï¼Œctrl_lockedçš„çŠ¶æ€åº”æ˜¯unlockedï¼Œè€Œunlockedçš„end_ctrlä»€ä¹ˆä¹Ÿä¸åšç›´æ¥è¿”å›ã€‚
 
 	return;
 }
@@ -1403,7 +1403,7 @@ static void ump_closed_leave_state(UMPSocket* u_sock)
 
 
 
-////////////connecting×´Ì¬»úÏà¹Øº¯Êı
+////////////connectingçŠ¶æ€æœºç›¸å…³å‡½æ•°
 static void ump_connecting_handle_ctrl(UMPSocket* u_sock,glong* sleep_ms)
 {
 	/*if(u_sock->ctrl_para==NULL){
@@ -1415,7 +1415,7 @@ static void ump_connecting_handle_ctrl(UMPSocket* u_sock,glong* sleep_ms)
 
 	//do the work
 	if(u_sock->ctrl_para->ctrl_method!=METHOD_CONNECT){
-		//ÒªÏòÓÃ»§µÄ¿ØÖÆÏß³Ì±¨¸æ¿ØÖÆÊ§°Ü
+		//è¦å‘ç”¨æˆ·çš„æ§åˆ¶çº¿ç¨‹æŠ¥å‘Šæ§åˆ¶å¤±è´¥
 		ump_end_ctrl(u_sock,METHOD_ALL_CALL,FALSE);
 	}
 	return;
@@ -1424,12 +1424,12 @@ static void ump_connecting_handle_ctrl(UMPSocket* u_sock,glong* sleep_ms)
 static void ump_connecting_handle_ctrl_packet(UMPSocket* u_sock,UMPPacket* p,glong* sleep_ms)
 {
 	UMPPacket* uppri=p;
-	//Èç¹ûÊÕµ½ÁË¶ÔflagµÄack£¬ÄÇÃ´µ÷ÓÃÍê±Ï£¬È¡ÏûËø£¬ÉèÖÃÊÂ¼ş£¬ÊÍ·Å¿ØÖÆ°ü£¬ÉèÖÃÖ¸ÕëÎªNULL
-	//Èç¹ûÊÕµ½ÁËËùÓĞ¶ÔdataµÄack£¬ÄÇÃ´µ÷ÓÃÍê±Ï£¬È¡ÏûËø£¬ÉèÖÃÊÂ¼ş£¬ÊÍ·Å±¨ÎÄ
-	//½âÎöÊÕµ½µÄackĞÅÏ¢
+	//å¦‚æœæ”¶åˆ°äº†å¯¹flagçš„ackï¼Œé‚£ä¹ˆè°ƒç”¨å®Œæ¯•ï¼Œå–æ¶ˆé”ï¼Œè®¾ç½®äº‹ä»¶ï¼Œé‡Šæ”¾æ§åˆ¶åŒ…ï¼Œè®¾ç½®æŒ‡é’ˆä¸ºNULL
+	//å¦‚æœæ”¶åˆ°äº†æ‰€æœ‰å¯¹dataçš„ackï¼Œé‚£ä¹ˆè°ƒç”¨å®Œæ¯•ï¼Œå–æ¶ˆé”ï¼Œè®¾ç½®äº‹ä»¶ï¼Œé‡Šæ”¾æŠ¥æ–‡
+	//è§£ææ”¶åˆ°çš„ackä¿¡æ¯
 	if(u_packet_get_flag(p,UP_CTRL_ACK)==TRUE){
 		if(u_sock->our_ctrl_seq==uppri->ack_num){
-			//Ê×ÏÈÏû½â³¬Ê±
+			//é¦–å…ˆæ¶ˆè§£è¶…æ—¶
 			if(u_sock->ctrl_packet_to_send!=NULL){
 				u_packet_free(u_sock->ctrl_packet_to_send);
 				u_sock->ctrl_packet_to_send=NULL;
@@ -1445,7 +1445,7 @@ static void ump_connecting_handle_ctrl_packet(UMPSocket* u_sock,UMPPacket* p,glo
 			u_sock->ack_info.ctrl_ack_data=u_sock->their_ctrl_seq;
 			return;
 		}
-		//»ñÈ¡SEQ¡¢MSS¡¢WNDĞÅÏ¢
+		//è·å–SEQã€MSSã€WNDä¿¡æ¯
 		if(u_packet_get_flag(p,UP_CTRL_SEQ)==TRUE){
 			u_sock->their_ctrl_seq=uppri->seq_num+1;
 			u_sock->their_data_seq_base=uppri->seq_num;//+1;
@@ -1458,7 +1458,7 @@ static void ump_connecting_handle_ctrl_packet(UMPSocket* u_sock,UMPPacket* p,glo
 		if(u_packet_get_flag(p,UP_CTRL_WND)==TRUE){
 			u_sock->their_wnd=uppri->wnd_num;
 		}
-		//ÉèÖÃ·¢³öµÄack
+		//è®¾ç½®å‘å‡ºçš„ack
 		u_sock->ack_info.ctrl_ack_set=TRUE;
 		u_sock->ack_info.ctrl_ack_data=u_sock->their_ctrl_seq;
 		u_sock->syn_reced=TRUE;
@@ -1471,7 +1471,7 @@ static void ump_connecting_handle_ctrl_packet(UMPSocket* u_sock,UMPPacket* p,glo
 			u_sock->ack_info.ctrl_ack_data=u_sock->their_ctrl_seq;
 		}
 	}
-	//Èç¹ûackºÍsyn¶¼ÊÕµ½ÁË£¬¾ÍÇĞ»»×´Ì¬
+	//å¦‚æœackå’Œsynéƒ½æ”¶åˆ°äº†ï¼Œå°±åˆ‡æ¢çŠ¶æ€
 	if(u_sock->syn_reced==TRUE && u_sock->syn_ack_reced==TRUE){
 		ump_change_state(u_sock,UMP_ESTABLISHED);
 	}
@@ -1479,7 +1479,7 @@ static void ump_connecting_handle_ctrl_packet(UMPSocket* u_sock,UMPPacket* p,glo
 }
 
 
-//connecting´¦ÀíÊı¾İ±¨ÎÄµÄÊ±ºò²ÉÈ¡ºöÂÔµÄ²ßÂÔ
+//connectingå¤„ç†æ•°æ®æŠ¥æ–‡çš„æ—¶å€™é‡‡å–å¿½ç•¥çš„ç­–ç•¥
 static void ump_connecting_handle_data_packet(UMPSocket *u_sock,UMPPacket *p,glong *sleep_ms){
 	u_packet_free(p);
 	return;
@@ -1518,7 +1518,7 @@ static void ump_connecting_leave_state(UMPSocket* u_sock)
 
 
 
-////////////////established×´Ì¬»úÏà¹Øº¯Êı
+////////////////establishedçŠ¶æ€æœºç›¸å…³å‡½æ•°
 static void ump_established_handle_ctrl(UMPSocket* u_sock,glong* sleep_ms)
 {
 	/*if(u_sock->ctrl_para==NULL){
@@ -1532,15 +1532,15 @@ static void ump_established_handle_ctrl(UMPSocket* u_sock,glong* sleep_ms)
 	if(u_sock->ctrl_para->ctrl_method==METHOD_CLOSE){
 		ump_established_close(u_sock);
 		ump_change_state(u_sock,UMP_CLOSING);
-		//Èç¹û´æÔÚsendµ÷ÓÃ£¬Ôò½áÊøµ÷ÓÃ
+		//å¦‚æœå­˜åœ¨sendè°ƒç”¨ï¼Œåˆ™ç»“æŸè°ƒç”¨
 		ump_end_send(u_sock,FALSE);
-		//Èç¹û´æÔÚreceiveµ÷ÓÃ£¬Ôò½áÊøµ÷ÓÃ
+		//å¦‚æœå­˜åœ¨receiveè°ƒç”¨ï¼Œåˆ™ç»“æŸè°ƒç”¨
 		ump_end_receive(u_sock,FALSE);
 	}else if(u_sock->ctrl_para->ctrl_method==METHOD_CONNECT){
-		//ÒªÏòÓÃ»§µÄ¿ØÖÆÏß³Ì±¨¸æ¿ØÖÆ³É¹¦
+		//è¦å‘ç”¨æˆ·çš„æ§åˆ¶çº¿ç¨‹æŠ¥å‘Šæ§åˆ¶æˆåŠŸ
 		ump_end_ctrl(u_sock,METHOD_CONNECT,TRUE);
 	}else{
-		//ÒªÏòÓÃ»§µÄ¿ØÖÆÏß³Ì±¨¸æ¿ØÖÆÊ§°Ü
+		//è¦å‘ç”¨æˆ·çš„æ§åˆ¶çº¿ç¨‹æŠ¥å‘Šæ§åˆ¶å¤±è´¥
 		ump_end_ctrl(u_sock,METHOD_ALL_CALL,FALSE);
 	}
 	return;
@@ -1549,19 +1549,19 @@ static void ump_established_handle_ctrl(UMPSocket* u_sock,glong* sleep_ms)
 static void ump_established_handle_ctrl_packet(UMPSocket* u_sock,UMPPacket* p,glong* sleep_ms)
 {
 	UMPPacket* uppri=p;
-	//Èç¹ûÊÕµ½ÁË¶ÔflagµÄack£¬ÄÇÃ´µ÷ÓÃÍê±Ï£¬È¡ÏûËø£¬ÉèÖÃÊÂ¼ş£¬ÊÍ·Å¿ØÖÆ°ü£¬ÉèÖÃÖ¸ÕëÎªNULL
-	//Èç¹ûÊÕµ½ÁËËùÓĞ¶ÔdataµÄack£¬ÄÇÃ´µ÷ÓÃÍê±Ï£¬È¡ÏûËø£¬ÉèÖÃÊÂ¼ş£¬ÊÍ·Å±¨ÎÄ
-	//½âÎöÊÕµ½µÄackĞÅÏ¢
+	//å¦‚æœæ”¶åˆ°äº†å¯¹flagçš„ackï¼Œé‚£ä¹ˆè°ƒç”¨å®Œæ¯•ï¼Œå–æ¶ˆé”ï¼Œè®¾ç½®äº‹ä»¶ï¼Œé‡Šæ”¾æ§åˆ¶åŒ…ï¼Œè®¾ç½®æŒ‡é’ˆä¸ºNULL
+	//å¦‚æœæ”¶åˆ°äº†æ‰€æœ‰å¯¹dataçš„ackï¼Œé‚£ä¹ˆè°ƒç”¨å®Œæ¯•ï¼Œå–æ¶ˆé”ï¼Œè®¾ç½®äº‹ä»¶ï¼Œé‡Šæ”¾æŠ¥æ–‡
+	//è§£ææ”¶åˆ°çš„ackä¿¡æ¯
 	if(u_packet_get_flag(p,UP_CTRL_ACK)==TRUE){
 		if(u_sock->our_ctrl_seq==uppri->ack_num){
-			//Ê×ÏÈÏû½â³¬Ê±
+			//é¦–å…ˆæ¶ˆè§£è¶…æ—¶
 			if(u_sock->ctrl_packet_to_send!=NULL){
 				u_packet_free(u_sock->ctrl_packet_to_send);
 				u_sock->ctrl_packet_to_send=NULL;
 			}
 			u_sock->ctrl_packet_sent=TRUE;
 			ump_init_ctrl_rto(u_sock);
-			//ÒªÏòÓÃ»§µÄ¿ØÖÆÏß³Ì±¨¸æ¿ØÖÆ³É¹¦
+			//è¦å‘ç”¨æˆ·çš„æ§åˆ¶çº¿ç¨‹æŠ¥å‘Šæ§åˆ¶æˆåŠŸ
 			ump_end_ctrl(u_sock,METHOD_ALL_CALL,TRUE);
 		}
 	}
@@ -1595,51 +1595,51 @@ static void ump_established_handle_data_packet(UMPSocket *u_sock,UMPPacket *p,gl
 		//log_out("regular data %p\n",p);
 	}
 #endif
-	//´¦ÀíackĞÅÏ¢
+	//å¤„ç†ackä¿¡æ¯
 	ump_handle_data_ack(u_sock,p,sleep_ms);
-	if(u_packet_get_flag(p,UP_DATA_SEQ)==FALSE){//Ã»ÓĞSEQ±àºÅ
+	if(u_packet_get_flag(p,UP_DATA_SEQ)==FALSE){//æ²¡æœ‰SEQç¼–å·
 		u_packet_free(p);
 		return;
 	}
 #ifdef VERBOSE
 	log_out("got data seq %u and our rcvbase_seq %u\n",p->seq_num,u_sock->their_data_seq_base);
 #endif
-	if(ump_cmp_in_rcvbase(u_sock,p->seq_num,u_sock->their_data_seq_base)<0){//²»ÔÚ½ÓÊÕ·¶Î§Ö®ÄÚ
+	if(ump_cmp_in_rcvbase(u_sock,p->seq_num,u_sock->their_data_seq_base)<0){//ä¸åœ¨æ¥æ”¶èŒƒå›´ä¹‹å†…
 		u_packet_free(p);
 		return;
 	}
-	//ÕÒµ½Òª²åÈëÊı¾İµÄÎ»ÖÃ
+	//æ‰¾åˆ°è¦æ’å…¥æ•°æ®çš„ä½ç½®
 	tail=g_list_last(u_sock->rcv_data_packets);
 	while(tail!=NULL && ump_cmp_in_rcvbase(u_sock,p->seq_num,((UMPPacket*)(tail->data))->seq_num)<0){
 		next=tail;
 		tail=tail->prev;
 	}
-	if(tail && p->seq_num==((UMPPacket*)(tail->data))->seq_num){//ÊÕµ½ÖØ¸´Êı¾İ
+	if(tail && p->seq_num==((UMPPacket*)(tail->data))->seq_num){//æ”¶åˆ°é‡å¤æ•°æ®
 		u_packet_free(p);
 		return;
 	}
-	//²åÈëÊı¾İ
+	//æ’å…¥æ•°æ®
 	u_sock->rcv_data_packets=g_list_insert_before(u_sock->rcv_data_packets,next,p);
-	//×¼±¸¸üĞÂtheir_data_seq_baseºÍrcv_data_so_far
+	//å‡†å¤‡æ›´æ–°their_data_seq_baseå’Œrcv_data_so_far
 	if(u_sock->rcv_data_so_far==NULL){
 		start=ump_list_first(u_sock->rcv_data_packets);
 		if(((UMPPacket*)(start->data))->seq_num!=u_sock->their_data_seq_base){
-			//ÊÕµ½²»Á¬ĞøÊı¾İ
+			//æ”¶åˆ°ä¸è¿ç»­æ•°æ®
 			return;
 		}
-		//ÊÕµ½ĞÂÊı¾İ
+		//æ”¶åˆ°æ–°æ•°æ®
 		u_sock->rcv_data_so_far=start;
 		check_if_get_msg=1;
 	}
 	while(u_sock->rcv_data_so_far->next!=NULL && (guint16)(((UMPPacket*)(u_sock->rcv_data_so_far->data))->seq_num+1) == (guint16)((UMPPacket*)(u_sock->rcv_data_so_far->next->data))->seq_num){
-		//ÊÕµ½ĞÂÊı¾İ
+		//æ”¶åˆ°æ–°æ•°æ®
 		u_sock->rcv_data_so_far=u_sock->rcv_data_so_far->next;
 		check_if_get_msg=1;
 	}
 	u_sock->their_data_seq_base=((UMPPacket*)(u_sock->rcv_data_so_far->data))->seq_num+1;
 	if(check_if_get_msg==1){
-		//ÊÕµ½ĞÂÊı¾İ£¨¼´rcv_data_so_far¸Ä±ä£©ºó²ÅÒª¼ì²éÊÇ·ñ¹¹³ÉÁËĞÂµÄÏûÏ¢
-		//ÆäËûÇé¿öÏÂµ÷ÓÃump_check_rcv_data_so_farÔò»á³ö´í
+		//æ”¶åˆ°æ–°æ•°æ®ï¼ˆå³rcv_data_so_faræ”¹å˜ï¼‰åæ‰è¦æ£€æŸ¥æ˜¯å¦æ„æˆäº†æ–°çš„æ¶ˆæ¯
+		//å…¶ä»–æƒ…å†µä¸‹è°ƒç”¨ump_check_rcv_data_so_faråˆ™ä¼šå‡ºé”™
 		ump_check_rcv_data_so_far(u_sock);
 	}
 	return;
@@ -1685,9 +1685,9 @@ static void ump_established_enter_state(UMPSocket* u_sock)
 	//g_mutex_lock(u_sock->public_state_lock);
 		g_get_current_time(&u_sock->connect_time);
 	//g_mutex_unlock(u_sock->public_state_lock);
-	//Èç¹û´æÔÚconnectµ÷ÓÃ£¬±íÃ÷ÎÒÃÇÕıÔÚÖ´ĞĞÖ÷¶¯´ò¿ª£¬ÔòÊÍ·ÅËø
+	//å¦‚æœå­˜åœ¨connectè°ƒç”¨ï¼Œè¡¨æ˜æˆ‘ä»¬æ­£åœ¨æ‰§è¡Œä¸»åŠ¨æ‰“å¼€ï¼Œåˆ™é‡Šæ”¾é”
 	u_ctrl_sm_funcs[u_sock->ctrl_locked].ctrllock_sm_end_ctrl(u_sock,METHOD_CONNECT,TRUE);
-	//ÈôÕıÔÚÖ´ĞĞ±»¶¯´ò¿ª£¬Ôòctrl_lockedÖµÎªunlocked£¬unlocked×´Ì¬»úµÄsm_end_ctrl²Ù×÷»áÈ¥Í¨ÖªacceptÏß³Ì£¬±íÃ÷Á¬½ÓÒÑ½¨Á¢
+	//è‹¥æ­£åœ¨æ‰§è¡Œè¢«åŠ¨æ‰“å¼€ï¼Œåˆ™ctrl_lockedå€¼ä¸ºunlockedï¼ŒunlockedçŠ¶æ€æœºçš„sm_end_ctrlæ“ä½œä¼šå»é€šçŸ¥acceptçº¿ç¨‹ï¼Œè¡¨æ˜è¿æ¥å·²å»ºç«‹
 	return;
 }
 
@@ -1699,7 +1699,7 @@ static void ump_established_leave_state(UMPSocket* u_sock)
 
 
 
-/////////////////////////closing×´Ì¬»úÏà¹Øº¯Êı
+/////////////////////////closingçŠ¶æ€æœºç›¸å…³å‡½æ•°
 static void ump_closing_handle_ctrl(UMPSocket* u_sock,glong* sleep_ms)
 {
 	/*if(u_sock->ctrl_para==NULL){
@@ -1711,7 +1711,7 @@ static void ump_closing_handle_ctrl(UMPSocket* u_sock,glong* sleep_ms)
 
 	//do the work
 	if(u_sock->ctrl_para->ctrl_method!=METHOD_CLOSE){
-		//ÒªÏòÓÃ»§µÄ¿ØÖÆÏß³Ì±¨¸æ¿ØÖÆÊ§°Ü
+		//è¦å‘ç”¨æˆ·çš„æ§åˆ¶çº¿ç¨‹æŠ¥å‘Šæ§åˆ¶å¤±è´¥
 		ump_end_ctrl(u_sock,METHOD_ALL_CALL,FALSE);
 	}
 	return;
@@ -1720,12 +1720,12 @@ static void ump_closing_handle_ctrl(UMPSocket* u_sock,glong* sleep_ms)
 static void ump_closing_handle_ctrl_packet(UMPSocket* u_sock,UMPPacket* p,glong* sleep_ms)
 {
 	UMPPacket* uppri=p;
-	////Èç¹ûÊÕµ½ÁË¶ÔflagµÄack£¬ÄÇÃ´µ÷ÓÃÍê±Ï£¬È¡ÏûËø£¬ÉèÖÃÊÂ¼ş£¬ÊÍ·Å¿ØÖÆ°ü£¬ÉèÖÃÖ¸ÕëÎªNULL
-	////Èç¹ûÊÕµ½ÁËËùÓĞ¶ÔdataµÄack£¬ÄÇÃ´µ÷ÓÃÍê±Ï£¬È¡ÏûËø£¬ÉèÖÃÊÂ¼ş£¬ÊÍ·Å±¨ÎÄ
-	//½âÎöÊÕµ½µÄackĞÅÏ¢
+	////å¦‚æœæ”¶åˆ°äº†å¯¹flagçš„ackï¼Œé‚£ä¹ˆè°ƒç”¨å®Œæ¯•ï¼Œå–æ¶ˆé”ï¼Œè®¾ç½®äº‹ä»¶ï¼Œé‡Šæ”¾æ§åˆ¶åŒ…ï¼Œè®¾ç½®æŒ‡é’ˆä¸ºNULL
+	////å¦‚æœæ”¶åˆ°äº†æ‰€æœ‰å¯¹dataçš„ackï¼Œé‚£ä¹ˆè°ƒç”¨å®Œæ¯•ï¼Œå–æ¶ˆé”ï¼Œè®¾ç½®äº‹ä»¶ï¼Œé‡Šæ”¾æŠ¥æ–‡
+	//è§£ææ”¶åˆ°çš„ackä¿¡æ¯
 	if(u_packet_get_flag(p,UP_CTRL_ACK)==TRUE){
 		if(u_sock->our_ctrl_seq==uppri->ack_num){
-			//Ê×ÏÈÏû½â³¬Ê±
+			//é¦–å…ˆæ¶ˆè§£è¶…æ—¶
 			if(u_sock->ctrl_packet_to_send!=NULL){
 				u_packet_free(u_sock->ctrl_packet_to_send);
 				u_sock->ctrl_packet_to_send=NULL;
@@ -1745,7 +1745,7 @@ static void ump_closing_handle_ctrl_packet(UMPSocket* u_sock,UMPPacket* p,glong*
 		u_sock->ack_info.ctrl_ack_set=TRUE;
 		u_sock->ack_info.ctrl_ack_data=u_sock->their_ctrl_seq;
 	}
-	//Èç¹ûackºÍfin¶¼ÊÕµ½ÁË£¬¾ÍÇĞ»»×´Ì¬
+	//å¦‚æœackå’Œfinéƒ½æ”¶åˆ°äº†ï¼Œå°±åˆ‡æ¢çŠ¶æ€
 	if(u_sock->fin_reced==TRUE && u_sock->fin_ack_reced==TRUE){
 		ump_change_state(u_sock,UMP_CLOSED);
 	}
@@ -1753,7 +1753,7 @@ static void ump_closing_handle_ctrl_packet(UMPSocket* u_sock,UMPPacket* p,glong*
 }
 
 static void ump_closing_handle_data_packet(UMPSocket *u_sock,UMPPacket *p,glong *sleep_ms){
-	//´¦ÀíackĞÅÏ¢
+	//å¤„ç†ackä¿¡æ¯
 	ump_handle_data_ack(u_sock,p,sleep_ms);
 	u_packet_free(p);
 	return;

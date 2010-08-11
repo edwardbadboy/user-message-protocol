@@ -24,17 +24,17 @@ static guint ump_sock_fetch_received_packets(UMPSocket* u_s,glong* sleep_ms);
 
 static gboolean ump_sock_control_call(UMPSocket* u_sock,UMPCtrlParam* call_param);
 
-static void ump_handle_ctrl(UMPSocket* u_sock,glong* sleep_ms);//ÓÉsock_thread_funcµ÷ÓÃ£¬ÔÙÈ¥µ÷ÓÃ×´Ì¬»ú´¦Àíº¯Êı
+static void ump_handle_ctrl(UMPSocket* u_sock,glong* sleep_ms);//ç”±sock_thread_funcè°ƒç”¨ï¼Œå†å»è°ƒç”¨çŠ¶æ€æœºå¤„ç†å‡½æ•°
 static void ump_end_ctrl(UMPSocket* u_sock,UMPCallMethod call_method, gboolean ctrl_result);
-static void ump_handle_ctrl_packet(UMPSocket* u_sock,glong* sleep_ms);//ÓÉsock_thread_funcµ÷ÓÃ£¬ÔÙÈ¥µ÷ÓÃ×´Ì¬»ú´¦Àíº¯Êı
+static void ump_handle_ctrl_packet(UMPSocket* u_sock,glong* sleep_ms);//ç”±sock_thread_funcè°ƒç”¨ï¼Œå†å»è°ƒç”¨çŠ¶æ€æœºå¤„ç†å‡½æ•°
 static void ump_handle_ctrl_timeout(UMPSocket* u_sock,glong* sleep_ms);
-static void ump_handle_send_ctrl_packet(UMPSocket* u_sock,glong* sleep_ms);//ÓÉsock_thread_funcµ÷ÓÃ£¬·¢³ö×¼±¸ºÃµÄctrl°ü²¢ÉÓ´øctrl_ack£¬»òµ¥¶À·¢ËÍctrl_ack
+static void ump_handle_send_ctrl_packet(UMPSocket* u_sock,glong* sleep_ms);//ç”±sock_thread_funcè°ƒç”¨ï¼Œå‘å‡ºå‡†å¤‡å¥½çš„ctrlåŒ…å¹¶æå¸¦ctrl_ackï¼Œæˆ–å•ç‹¬å‘é€ctrl_ack
 
 static void ump_handle_receive(UMPSocket* u_sock,glong* sleep_ms);
 static void ump_end_receive(UMPSocket* u_sock,gboolean rec_result);
 static void ump_end_receive_internal(UMPSocket* u_sock);
 
-static void ump_handle_send(UMPSocket* u_sock,glong* sleep_ms);//ÓÉsock_thread_funcµ÷ÓÃ£¬´¦Àí·¢ËÍµ÷ÓÃ
+static void ump_handle_send(UMPSocket* u_sock,glong* sleep_ms);//ç”±sock_thread_funcè°ƒç”¨ï¼Œå¤„ç†å‘é€è°ƒç”¨
 static void ump_end_send(UMPSocket* u_sock,gboolean snd_result);
 static void ump_handle_send_data(UMPSocket* u_sock,glong* sleep_ms);
 static void ump_handle_data_packet(UMPSocket* u_sock,glong* sleep_ms);
@@ -64,7 +64,7 @@ static void ump_handle_send_heartbeat(UMPSocket *u_sock,glong* sleep_ms);
 
 
 
-//×´Ì¬»úÏà¹Ø
+//çŠ¶æ€æœºç›¸å…³
 typedef void (*ump_sm_handle_ctrl)(UMPSocket* u_sock,glong* sleep_ms);
 typedef void (*ump_sm_handle_ctrl_packet)(UMPSocket* u_sock,UMPPacket* p,glong* sleep_ms);
 typedef void (*ump_sm_handle_data_packet)(UMPSocket *u_sock,UMPPacket *p,glong *sleep_ms);
@@ -75,7 +75,7 @@ typedef void (*ump_sm_receive)(UMPSocket* u_sock);
 typedef void (*ump_sm_enter_state)(UMPSocket* u_sock);
 typedef void (*ump_sm_leave_state)(UMPSocket* u_sock);
 
-//Ã¿¸ö×´Ì¬»úÒªÊµÏÖµÄº¯Êı
+//æ¯ä¸ªçŠ¶æ€æœºè¦å®ç°çš„å‡½æ•°
 typedef struct _ump_sm_funcs
 {
 	ump_sm_handle_ctrl sm_handle_ctrl;
@@ -140,7 +140,7 @@ typedef enum _ump_lock_state
 }UMPLockState;
 
 
-//////////////////////////ctrl lock×´Ì¬»ú
+//////////////////////////ctrl lockçŠ¶æ€æœº
 typedef void (*ump_ctrllock_sm_handle_ctrl)(UMPSocket* u_sock,glong* sleep_ms);
 typedef void (*ump_ctrllock_sm_enter_state)(UMPSocket* u_sock);
 typedef void (*ump_ctrllock_sm_leave_state)(UMPSocket* u_sock);
@@ -168,7 +168,7 @@ static void ump_ctrllocked_end_ctrl(UMPSocket* u_sock,UMPCallMethod call_method,
 
 
 
-///////////////////////////rec lock×´Ì¬»ú
+///////////////////////////rec lockçŠ¶æ€æœº
 typedef void (*ump_reclock_handle_rec)(UMPSocket* u_sock,glong* sleep_ms);
 typedef void (*ump_reclock_enter_state)(UMPSocket* u_sock);
 typedef void (*ump_reclock_leave_state)(UMPSocket* u_sock);
@@ -196,7 +196,7 @@ static void ump_reclocked_end_rec(UMPSocket* u_sock,gboolean rec_result);
 
 
 
-//////////////////////////snd lock×´Ì¬»ú
+//////////////////////////snd lockçŠ¶æ€æœº
 typedef void (*ump_sndlock_sm_handle_snd)(UMPSocket* u_sock,glong* sleep_ms);
 typedef void (*ump_sndlock_sm_enter_state)(UMPSocket* u_sock);
 typedef void (*ump_sndlock_sm_leave_state)(UMPSocket* u_sock);
@@ -230,7 +230,7 @@ static void ump_sndlocked_handle_send_data(UMPSocket* u_sock,glong* sleep_ms);
 
 typedef struct _ump_ack_info
 {	
-	//ĞèÒª·¢ËÍÊ±½«setÖÃTRUE£¬·¢ËÍÍêºó½«setÖÃFALSE
+	//éœ€è¦å‘é€æ—¶å°†setç½®TRUEï¼Œå‘é€å®Œåå°†setç½®FALSE
 	gboolean ctrl_ack_set;
 	gboolean data_ack_set;
 	guint16 ctrl_ack_data;
@@ -249,10 +249,10 @@ typedef struct _ump_socket
 	GMutex* thread_stop_work_lock;
 	gboolean thread_stop_work;
 
-	UMPSockState state;//×´Ì¬»úĞĞÎªÈ«²¿ÒÀÀµÓÚstate¶¨ÒåµÄ×´Ì¬
+	UMPSockState state;//çŠ¶æ€æœºè¡Œä¸ºå…¨éƒ¨ä¾èµ–äºstateå®šä¹‰çš„çŠ¶æ€
 
-	GMutex* public_state_lock;//±£»¤public_state¡¢connect_time¡¢close_time
-	UMPSockState public_state;//ÓÃËø±£»¤µÄÏß³Ì°²È«µÄ×´Ì¬£¬Óëstate±äÁ¿Í¬Ê±±ä»¯¡£Ö»ÓĞstate±ä»¯»òÕßÍâ²¿Ïß³Ì·ÃÎÊpublic_stateÊ±£¬²ÅĞèÒªÉÏËø¡£×´Ì¬»úº¯Êı²»·ÃÎÊ´Ë±äÁ¿²»ÓÃÉÏËø
+	GMutex* public_state_lock;//ä¿æŠ¤public_stateã€connect_timeã€close_time
+	UMPSockState public_state;//ç”¨é”ä¿æŠ¤çš„çº¿ç¨‹å®‰å…¨çš„çŠ¶æ€ï¼Œä¸stateå˜é‡åŒæ—¶å˜åŒ–ã€‚åªæœ‰stateå˜åŒ–æˆ–è€…å¤–éƒ¨çº¿ç¨‹è®¿é—®public_stateæ—¶ï¼Œæ‰éœ€è¦ä¸Šé”ã€‚çŠ¶æ€æœºå‡½æ•°ä¸è®¿é—®æ­¤å˜é‡ä¸ç”¨ä¸Šé”
 	GTimeVal connect_time;
 	GTimeVal close_time;
 
@@ -264,52 +264,52 @@ typedef struct _ump_socket
 	MEvent* do_work_event;
 
 	GMutex* rec_packets_lock;
-	GQueue* rec_control_packets;//´ı´¦ÀíµÄ¿ØÖÆÊı¾İ±¨
-	GQueue* rec_data_packets;//´ı´¦ÀíµÄÊı¾İ±¨
+	GQueue* rec_control_packets;//å¾…å¤„ç†çš„æ§åˆ¶æ•°æ®æŠ¥
+	GQueue* rec_data_packets;//å¾…å¤„ç†çš„æ•°æ®æŠ¥
 
 	RTOComputer* rto_cpt;
 	GList* tm_list;
 
-	//·¢ËÍÊı¾İ´¦ÀíÏà¹Ø
-	guint16 their_wnd;//¶Ô·½µÄÍ¨¸æ´°¿Ú
+	//å‘é€æ•°æ®å¤„ç†ç›¸å…³
+	guint16 their_wnd;//å¯¹æ–¹çš„é€šå‘Šçª—å£
 	guint16 our_mss;
-	guint16 our_data_start_seq;//Ò»´Î·¢ËÍÊı¾İÊ±£¬Ê×¸ö°üµÄseq
-	guint16 our_data_seq_base;//¶Ô·½ÒÑÊÕµ½µÄÊı¾İµÄ¾ø¶ÔÎ»ÖÃ+1
-	guint16 our_back_point;//¾ø¶ÔÎ»ÖÃ
-	//guint16 our_data_pos;//ÕıÔÚ·¢ËÍµÄÊı¾İ¾ø¶ÔÎ»ÖÃ
-	gint our_data_pos;//ÕıÔÚ·¢ËÍµÄÊı¾İµÄÏà¶Ôour_data_start_seqµÄÎ»ÖÃ
-	guint16 our_data_sent;//·¢ËÍ¹ıÊı¾İµÄ¾ø¶ÔÎ»ÖÃ
-	//guint16 our_wnd;//¾ø¶ÔÎ»ÖÃ£¬×îÖÕÈ·¶¨µÄ·¢ËÍ´°¿ÚµÄÎ»ÖÃ
-	gint our_wnd_pos;//Ïà¶ÔÎ»ÖÃ£¬×îÖÕÈ·¶¨µÄ·¢ËÍ´°¿ÚÏà¶Ôour_data_start_seqµÄÎ»ÖÃ
-	guint16 our_cwnd;//ÓµÈû´°¿Ú³ß´ç
-	guint16 our_ssthresh;//ÂıÆô¶¯ÃÅÏŞ
+	guint16 our_data_start_seq;//ä¸€æ¬¡å‘é€æ•°æ®æ—¶ï¼Œé¦–ä¸ªåŒ…çš„seq
+	guint16 our_data_seq_base;//å¯¹æ–¹å·²æ”¶åˆ°çš„æ•°æ®çš„ç»å¯¹ä½ç½®+1
+	guint16 our_back_point;//ç»å¯¹ä½ç½®
+	//guint16 our_data_pos;//æ­£åœ¨å‘é€çš„æ•°æ®ç»å¯¹ä½ç½®
+	gint our_data_pos;//æ­£åœ¨å‘é€çš„æ•°æ®çš„ç›¸å¯¹our_data_start_seqçš„ä½ç½®
+	guint16 our_data_sent;//å‘é€è¿‡æ•°æ®çš„ç»å¯¹ä½ç½®
+	//guint16 our_wnd;//ç»å¯¹ä½ç½®ï¼Œæœ€ç»ˆç¡®å®šçš„å‘é€çª—å£çš„ä½ç½®
+	gint our_wnd_pos;//ç›¸å¯¹ä½ç½®ï¼Œæœ€ç»ˆç¡®å®šçš„å‘é€çª—å£ç›¸å¯¹our_data_start_seqçš„ä½ç½®
+	guint16 our_cwnd;//æ‹¥å¡çª—å£å°ºå¯¸
+	guint16 our_ssthresh;//æ…¢å¯åŠ¨é—¨é™
 	guint16 our_ctrl_seq;
-	guint16 our_msg_last_seq;//ÔÚsnd±»×ª»»µ½lockedµÄÊ±ºò±»³õÊ¼»¯
+	guint16 our_msg_last_seq;//åœ¨sndè¢«è½¬æ¢åˆ°lockedçš„æ—¶å€™è¢«åˆå§‹åŒ–
 	GTimeVal last_refresh_cwnd;
 
 	gboolean fast_retran;
 	gint ack_rep_count;
 
-	UMPAckInfo ack_info;//ÓÃÓÚ±ê¼ÇÊÇ·ñÓĞackĞèÒª·¢ËÍ
+	UMPAckInfo ack_info;//ç”¨äºæ ‡è®°æ˜¯å¦æœ‰ackéœ€è¦å‘é€
 
-	//½ÓÊÕÊı¾İ´¦ÀíÏà¹Ø
-	guint16 their_ctrl_seq;//¾ø¶ÔÎ»ÖÃ£¬µÈÓÚÒÑÊÕµ½µÄctrl_seq+1
-	guint16 our_rwnd;//ÎÒ·½½«ÒªÍ¨¸æµÄ´°¿Ú
-	guint16 our_rwnd_pos_seq;//ÎÒ·½ÒÑÍ¨¸æ´°¿ÚËùÈ·¶¨µÄseqµÄ¾ø¶ÔÎ»ÖÃ
-	guint16 their_data_seq_base;//¾ø¶ÔÎ»ÖÃ£¬µÈÓÚÒÑÊÕµ½µÄdata_seq+1
+	//æ¥æ”¶æ•°æ®å¤„ç†ç›¸å…³
+	guint16 their_ctrl_seq;//ç»å¯¹ä½ç½®ï¼Œç­‰äºå·²æ”¶åˆ°çš„ctrl_seq+1
+	guint16 our_rwnd;//æˆ‘æ–¹å°†è¦é€šå‘Šçš„çª—å£
+	guint16 our_rwnd_pos_seq;//æˆ‘æ–¹å·²é€šå‘Šçª—å£æ‰€ç¡®å®šçš„seqçš„ç»å¯¹ä½ç½®
+	guint16 their_data_seq_base;//ç»å¯¹ä½ç½®ï¼Œç­‰äºå·²æ”¶åˆ°çš„data_seq+1
 	guint16 buffer_load;
-	//guint16 their_data_seq;//¾ø¶ÔÎ»ÖÃ£¬´ıÓÃ
+	//guint16 their_data_seq;//ç»å¯¹ä½ç½®ï¼Œå¾…ç”¨
 
 	GList* rcv_first_msg_end;
-	GList* rcv_data_so_far;//Ö¸Ïò½ÓÊÕµ½µÄÁ¬ĞøÊı¾İµÄÄ©Î²
-	GList* rcv_data_packets;//½ÓÊÕµ½µÄÊı¾İ±¨ÔÚÄÚ´æÖĞÖØĞÂ°´ĞòºÅÅÅ¶Ó
-	gint rcv_packets_msg_num;//data_packetsÖĞÍêÕû½ÓÊÕÁËµÄÏûÏ¢µÄÊıÁ¿
-	GList* local_data_packets;//Ã¿´Î¶ÁÈ¡´ı´¦ÀíµÄÊı¾İ±¨£¬¶¼¶Á³öµ±Ê±ÖÍÁôËùÓĞµÄÊı¾İ±¨£¬´æ·Åµ½Ò»¸ö·Ç¹²ÏíµÄÁ´±íÖĞ£¬µÈ´ı´¦Àí£¬ÒÔ¾¡ÔçÊÍ·Å¹²ÏíµÄ×ÊÔ´
-	GList* local_ctrl_packets;//Ã¿´Î¶ÁÈ¡´ı´¦ÀíµÄ¿ØÖÆÊı¾İ±¨£¬¶¼¶Á³öµ±Ê±ÖÍÁôËùÓĞµÄÊı¾İ±¨£¬´æ·Åµ½Ò»¸ö·Ç¹²ÏíµÄÁ´±íÖĞ£¬µÈ´ı´¦Àí£¬ÒÔ¾¡ÔçÊÍ·Å¹²ÏíµÄ×ÊÔ´
+	GList* rcv_data_so_far;//æŒ‡å‘æ¥æ”¶åˆ°çš„è¿ç»­æ•°æ®çš„æœ«å°¾
+	GList* rcv_data_packets;//æ¥æ”¶åˆ°çš„æ•°æ®æŠ¥åœ¨å†…å­˜ä¸­é‡æ–°æŒ‰åºå·æ’é˜Ÿ
+	gint rcv_packets_msg_num;//data_packetsä¸­å®Œæ•´æ¥æ”¶äº†çš„æ¶ˆæ¯çš„æ•°é‡
+	GList* local_data_packets;//æ¯æ¬¡è¯»å–å¾…å¤„ç†çš„æ•°æ®æŠ¥ï¼Œéƒ½è¯»å‡ºå½“æ—¶æ»ç•™æ‰€æœ‰çš„æ•°æ®æŠ¥ï¼Œå­˜æ”¾åˆ°ä¸€ä¸ªéå…±äº«çš„é“¾è¡¨ä¸­ï¼Œç­‰å¾…å¤„ç†ï¼Œä»¥å°½æ—©é‡Šæ”¾å…±äº«çš„èµ„æº
+	GList* local_ctrl_packets;//æ¯æ¬¡è¯»å–å¾…å¤„ç†çš„æ§åˆ¶æ•°æ®æŠ¥ï¼Œéƒ½è¯»å‡ºå½“æ—¶æ»ç•™æ‰€æœ‰çš„æ•°æ®æŠ¥ï¼Œå­˜æ”¾åˆ°ä¸€ä¸ªéå…±äº«çš„é“¾è¡¨ä¸­ï¼Œç­‰å¾…å¤„ç†ï¼Œä»¥å°½æ—©é‡Šæ”¾å…±äº«çš„èµ„æº
 	gint local_data_packets_count;
 
-	GMutex* ctrl_para_lock;//±£»¤ctrl_para¡¢ctrl_done¡¢ctrl_lockedµÄËø
-	UMPLockState ctrl_locked;//Ö¸Ê¾ump_sock_thread_funcÏß³ÌÊÇ·ñ¶Ôctrl_para_lockÉÏÁËËø
+	GMutex* ctrl_para_lock;//ä¿æŠ¤ctrl_paraã€ctrl_doneã€ctrl_lockedçš„é”
+	UMPLockState ctrl_locked;//æŒ‡ç¤ºump_sock_thread_funcçº¿ç¨‹æ˜¯å¦å¯¹ctrl_para_lockä¸Šäº†é”
 	MEvent* ctrl_done;
 	UMPCtrlParam* ctrl_para;
 	//gpointer ctrl_result;
@@ -318,7 +318,7 @@ typedef struct _ump_socket
 	GMutex* snd_para_lock;
 	UMPLockState snd_locked;
 	MEvent* snd_done;
-	UMPPacket** snd_packets;//´ı·¢ËÍµÄÏûÏ¢£¨±»·Ö³ÉºÜ¶àÊı¾İ±¨·ÅÔÚÁ´±íÀï£©
+	UMPPacket** snd_packets;//å¾…å‘é€çš„æ¶ˆæ¯ï¼ˆè¢«åˆ†æˆå¾ˆå¤šæ•°æ®æŠ¥æ”¾åœ¨é“¾è¡¨é‡Œï¼‰
 	gint snd_packets_count;
 	//gpointer snd_result;
 	gboolean snd_ok;
@@ -327,7 +327,7 @@ typedef struct _ump_socket
 	gboolean rec_locked;
 	gboolean receive_called;
 	MEvent* rec_done;
-	GList* rec_msg_packets;//½ÓÊÕÍê±ÏµÄÏûÏ¢£¨±»·Ö³ÉºÜ¶àÊı¾İ±¨·ÅÔÚÁ´±íÀï£©
+	GList* rec_msg_packets;//æ¥æ”¶å®Œæ¯•çš„æ¶ˆæ¯ï¼ˆè¢«åˆ†æˆå¾ˆå¤šæ•°æ®æŠ¥æ”¾åœ¨é“¾è¡¨é‡Œï¼‰
 	gchar* rec_msg;
 	gint rec_msg_l;
 	//gpointer rec_result;

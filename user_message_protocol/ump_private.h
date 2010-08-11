@@ -2,7 +2,7 @@
 #define USER_MESSAGE_PROTOCOL_PRIVATE_DEF
 #include <glib.h>
 #ifdef WIN32
-	//#define WIN32_LEAN_AND_MEAN		// ´Ó Windows Í·ÖÐÅÅ³ý¼«ÉÙÊ¹ÓÃµÄ×ÊÁÏ
+	//#define WIN32_LEAN_AND_MEAN		// ä»Ž Windows å¤´ä¸­æŽ’é™¤æžå°‘ä½¿ç”¨çš„èµ„æ–™
 	#include <winsock2.h>
 #endif
 #include "mevent_public.h"
@@ -14,8 +14,8 @@
 #define UMP_MAX_SLEEP_MS 200
 #define UMP_CTRL_TIMEOUT 3000
 
-//¿ÉÑ¡ÔñµÄÔ¤¶¨Òåºê£ºLOG_TIMEOUT¡¢DEBUG_OUT¡¢VERBOSE¡¢VERBOSE1¡¢VERBOSE2¡¢DEBUG_MEMORY_LEAK¡¢RAND_DROP
-//ÆäÖÐDEBUG_MEMORY_LEAKÒªÔÚdllºÍexe¹¤³ÌÖÐ¶¼ÆôÓÃ²ÅÐÐ
+//å¯é€‰æ‹©çš„é¢„å®šä¹‰å®ï¼šLOG_TIMEOUTã€DEBUG_OUTã€VERBOSEã€VERBOSE1ã€VERBOSE2ã€DEBUG_MEMORY_LEAKã€RAND_DROP
+//å…¶ä¸­DEBUG_MEMORY_LEAKè¦åœ¨dllå’Œexeå·¥ç¨‹ä¸­éƒ½å¯ç”¨æ‰è¡Œ
 
 //typedef struct _ump_connect_param
 //{

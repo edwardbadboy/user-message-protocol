@@ -4,7 +4,7 @@
 #include <stdio.h>
 
 #ifdef WIN32
-	//#define WIN32_LEAN_AND_MEAN		// ´Ó Windows Í·ÖĞÅÅ³ı¼«ÉÙÊ¹ÓÃµÄ×ÊÁÏ
+	//#define WIN32_LEAN_AND_MEAN		// ä» Windows å¤´ä¸­æ’é™¤æå°‘ä½¿ç”¨çš„èµ„æ–™
 	#ifdef OUTPORT
 		#define UMP_DLLDES __declspec(dllexport)  
 	#else

@@ -89,7 +89,7 @@ gpointer receive_thread_func(gpointer data)
 				u_sock=g_hash_table_lookup(u_core->closed_umps,&from);
 			}
 			if(u_sock==NULL){
-				//¼ì²âÊÇ·ñ¶Ô·½ÔÚ³¢ÊÔÁ¬½ÓÎÒÃÇ²¢´¦Àí
+				//æ£€æµ‹æ˜¯å¦å¯¹æ–¹åœ¨å°è¯•è¿žæŽ¥æˆ‘ä»¬å¹¶å¤„ç†
 				if(u_p->p_type==P_CONTROL && u_packet_get_flag(u_p,UP_CTRL_SYN)){
 					u_sock=ump_sock_new(u_core,&from);
 					if(g_hash_table_size(u_core->backlog_umps)<=u_core->backlog_limit){
@@ -119,7 +119,7 @@ gpointer receive_thread_func(gpointer data)
 						log_out("received ctrl packet\r\n");
 #endif
 					}else{
-						//¶ªÆú°ü
+						//ä¸¢å¼ƒåŒ…
 						u_packet_free(u_p);
 						u_p=NULL;
 #ifdef VERBOSE
@@ -133,7 +133,7 @@ gpointer receive_thread_func(gpointer data)
 						log_out("received data packet\r\n");
 #endif
 					}else{
-						//¶ªÆú°ü
+						//ä¸¢å¼ƒåŒ…
 						u_packet_free(u_p);
 						u_p=NULL;
 #ifdef VERBOSE
@@ -145,7 +145,7 @@ gpointer receive_thread_func(gpointer data)
 
 			ump_sock_notify_do_work(u_sock);
 		g_mutex_unlock(u_core->umps_lock);
-		//´¦ÀíÆÚ¼äumpsµÈ±íÊÇ±»Ëø¶¨µÄ£¬²»ÔÊÐí±»ÇåÀíÏß³Ì¹Ø±Õ
+		//å¤„ç†æœŸé—´umpsç­‰è¡¨æ˜¯è¢«é”å®šçš„ï¼Œä¸å…è®¸è¢«æ¸…ç†çº¿ç¨‹å…³é—­
 	}
 	return NULL;
 }

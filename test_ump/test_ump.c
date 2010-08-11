@@ -1,4 +1,4 @@
-// test_ump.cpp : ¶¨Òå¿ØÖÆÌ¨Ó¦ÓÃ³ÌĞòµÄÈë¿Úµã¡£
+// test_ump.cpp : å®šä¹‰æ§åˆ¶å°åº”ç”¨ç¨‹åºçš„å…¥å£ç‚¹ã€‚
 //
 
 #ifdef DEBUG_MEMORY_LEAK
@@ -10,7 +10,7 @@
 #include <stdio.h>
 
 #ifdef WIN32
-#define WIN32_LEAN_AND_MEAN		// ´Ó Windows Í·ÖĞÅÅ³ı¼«ÉÙÊ¹ÓÃµÄ×ÊÁÏ
+#define WIN32_LEAN_AND_MEAN		// ä» Windows å¤´ä¸­æ’é™¤æå°‘ä½¿ç”¨çš„èµ„æ–™
 	#include <winsock2.h>
 #endif
 

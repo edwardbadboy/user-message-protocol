@@ -35,7 +35,7 @@ gpointer u_packet_to_binary(UMPPacket* u_packet,gint* raw_data_l)
 		return upacketpri->raw_data;
 	}
 	p_type=upacketpri->p_type;
-	//Ê×ÏÈ¼ÆËãĞèÒª·ÖÅäµÄÄÚ´æ³¤¶È£¬·ÖÅäÄÚ´æ£¬È»ºó½«Êı¾İÊä³öµ½ÄÚ´æ
+	//é¦–å…ˆè®¡ç®—éœ€è¦åˆ†é…çš„å†…å­˜é•¿åº¦ï¼Œåˆ†é…å†…å­˜ï¼Œç„¶åå°†æ•°æ®è¾“å‡ºåˆ°å†…å­˜
 	if(p_type==P_CONTROL){
 		data_l+=4;
 		if(u_packet_get_flag(u_packet,UP_CTRL_SEQ)==TRUE){
@@ -78,7 +78,7 @@ gpointer u_packet_to_binary(UMPPacket* u_packet,gint* raw_data_l)
 		d++;
 		*d=upacketpri->ctrl_flags2;
 		d++;
-		//Îªcheck_sumÁô³ö¿Õ¼ä
+		//ä¸ºcheck_sumç•™å‡ºç©ºé—´
 		d+=2;
 		if(u_packet_get_flag(u_packet,UP_CTRL_SEQ)==TRUE){
 			(*(guint16*)d)=htons(upacketpri->seq_num);
@@ -99,7 +99,7 @@ gpointer u_packet_to_binary(UMPPacket* u_packet,gint* raw_data_l)
 	}else{
 		*d=upacketpri->data_flags;
 		d++;
-		//Îªcheck_sumÁô³ö¿Õ¼ä
+		//ä¸ºcheck_sumç•™å‡ºç©ºé—´
 		d+=2;
 		if(u_packet_get_flag(u_packet,UP_DATA_SEQ)==TRUE){
 			(*(guint16*)d)=htons(upacketpri->seq_num);
@@ -118,7 +118,7 @@ gpointer u_packet_to_binary(UMPPacket* u_packet,gint* raw_data_l)
 		memcpy(d,upacketpri->user_data,upacketpri->user_data_l);
 	}
 
-	//¿ªÊ¼¼ÆËãcheck_sum
+	//å¼€å§‹è®¡ç®—check_sum
 	d=raw_data;
 	if(p_type==P_CONTROL){
 		computed_sum=computed_sum+(guint16)(*d);
@@ -129,7 +129,7 @@ gpointer u_packet_to_binary(UMPPacket* u_packet,gint* raw_data_l)
 	}
 	d++;pos++;
 	check_sum_p=(guint16*)d;
-	//Ìø¹ıcheck_sumµÄµØ·½
+	//è·³è¿‡check_sumçš„åœ°æ–¹
 	d+=2;pos+=2;
 
 	while(pos<data_l-1)
@@ -176,7 +176,7 @@ UMPPacket* u_packet_from_binary(gpointer raw_data,gint raw_data_l)
 		return NULL;
 	}
 
-	//È¡flags£¬¼ÆËãĞ£ÑéºÍ£¬Óë´«ÊäµÄĞ£ÑéºÍ²»Í¬µÄ¾Í¶ªÆú
+	//å–flagsï¼Œè®¡ç®—æ ¡éªŒå’Œï¼Œä¸ä¼ è¾“çš„æ ¡éªŒå’Œä¸åŒçš„å°±ä¸¢å¼ƒ
 
 	if(((*d) & UP_TYPE)==P_CONTROL){
 		if(raw_data_l<4){
@@ -217,18 +217,18 @@ UMPPacket* u_packet_from_binary(gpointer raw_data,gint raw_data_l)
 	}
 
 	if(computed_sum!=data_check_sum){
-		//»á°Ñraw_dataÒ²ÊÍ·Å
+		//ä¼šæŠŠraw_dataä¹Ÿé‡Šæ”¾
 		u_packet_free(u_p);
 		return NULL;
 	}
 	u_p->check_sum=computed_sum;
-	//Ğ£ÑéÍê±Ï
+	//æ ¡éªŒå®Œæ¯•
 
-	//È¡³öSEQ¡¢ACK¡¢MSSµÈºÍÓÃ»§Êı¾İ
+	//å–å‡ºSEQã€ACKã€MSSç­‰å’Œç”¨æˆ·æ•°æ®
 	d=(guchar*)raw_data;
 	pos=0;
 
-	//ÕâÑù±£Ö¤d²»»áÔ½½ç£¬ÕâÑù¿ÉÒÔÊ¶±ğ»ûĞÎÊı¾İ±¨
+	//è¿™æ ·ä¿è¯dä¸ä¼šè¶Šç•Œï¼Œè¿™æ ·å¯ä»¥è¯†åˆ«ç•¸å½¢æ•°æ®æŠ¥
 	if(p_type==P_CONTROL){
 		d+=4;pos+=4;
 		if(u_packet_get_flag(u_p,UP_CTRL_SEQ)==TRUE){
