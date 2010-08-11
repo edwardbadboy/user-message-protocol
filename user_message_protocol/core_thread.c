@@ -17,7 +17,7 @@
 #include "upacket_private.h"
 #include "ump_misc.h"
 #include "mevent_public.h"
-#include "ump_sock.h"
+#include "ump_sock_public.h"
 #include "debug_out.h"
 #define UMP_CALM_MICROS 20000000
 
@@ -89,7 +89,7 @@ gpointer receive_thread_func(gpointer data)
 				if(u_p->p_type==P_CONTROL && u_packet_get_flag(u_p,UP_CTRL_SYN)){
 					u_sock=ump_sock_new(u_core,&from);
 					if(g_hash_table_size(u_core->backlog_umps)<=u_core->backlog_limit){
-						g_hash_table_insert(u_core->backlog_umps,&u_sock->their_addr,u_sock);
+						g_hash_table_insert(u_core->backlog_umps,ump_sock_remote_peer(u_sock),u_sock);
 						log_out("active connect request, added to backlog\r\n");
 					}else{
 						ump_sock_free(u_sock);
@@ -107,10 +107,10 @@ gpointer receive_thread_func(gpointer data)
 				continue;
 			}
 
-			g_mutex_lock(u_sock->rec_packets_lock);
+			ump_sock_lock_rec_packets(u_sock);
 				if(u_p->p_type==P_CONTROL){
-					if(g_queue_is_empty(u_sock->rec_control_packets)==TRUE){
-						g_queue_push_head(u_sock->rec_control_packets,u_p);
+					if(ump_sock_rec_ctrl_packets_space_available(u_sock)==TRUE){
+						ump_sock_rec_ctrl_packets_append(u_sock,u_p);
 #ifdef VERBOSE
 						log_out("received ctrl packet\r\n");
 #endif
@@ -123,8 +123,8 @@ gpointer receive_thread_func(gpointer data)
 #endif
 					}
 				}else{
-					if(g_queue_get_length(u_sock->rec_data_packets)<REC_QUEUE_LIMIT){
-						g_queue_push_head(u_sock->rec_data_packets,u_p);
+					if(ump_sock_rec_packets_space_available(u_sock)==TRUE){
+						ump_sock_rec_packets_append(u_sock,u_p);
 #ifdef VERBOSE
 						log_out("received data packet\r\n");
 #endif
@@ -137,9 +137,9 @@ gpointer receive_thread_func(gpointer data)
 #endif
 					}
 				}
-			g_mutex_unlock(u_sock->rec_packets_lock);
+			ump_sock_unlock_rec_packets(u_sock);
 
-			m_event_set(u_sock->do_work_event);
+			ump_sock_notify_do_work(u_sock);
 		g_mutex_unlock(u_core->umps_lock);
 		//处理期间umps等表是被锁定的，不允许被清理线程关闭
 	}
@@ -175,9 +175,9 @@ static gboolean ump_clean_closed_sock(gpointer key,gpointer value,gpointer user_
 	u_sock=value;
 	g_get_current_time(&cur);
 	g_time_val_add(&cur,-UMP_CALM_MICROS);
-	g_mutex_lock(u_sock->pubic_state_lock);
-		to_remove=(u_sock->public_state==UMP_CLOSED) && (ump_time_sub(&cur,&u_sock->close_time)>=0);
-	g_mutex_unlock(u_sock->pubic_state_lock);
+	ump_sock_lock_public_state(u_sock);
+		to_remove=(ump_sock_public_state(u_sock)==UMP_CLOSED) && (ump_time_sub(&cur,ump_sock_close_time(u_sock))>=0);
+	ump_sock_unlock_public_state(u_sock);
 	if(to_remove){
 		ump_sock_free(u_sock);
 	}

@@ -16,7 +16,7 @@
 
 #include "ump_misc.h"
 #include "ump_private.h"
-#include "ump_sock.h"
+#include "ump_sock_public.h"
 #include "upacket_public.h"
 #include "debug_out.h"
 
@@ -86,53 +86,6 @@ glong ump_time_sub(GTimeVal* t1,GTimeVal* t2)
 	return ms;
 }
 
-gint32 ump_cmp_in_sndbase(UMPSocket* u_sock,guint16 x,guint16 y)
-{
-	gint32 a=x,b=y;
-	guint16 circle_point=u_sock->our_data_seq_base+(G_MAXUINT16 >> 1);
-	if(a<=circle_point){
-		a+=G_MAXUINT16+1;
-	}
-	if(b<=circle_point){
-		b+=G_MAXUINT16+1;
-	}
-	return a-b;
-}
-
-gint32 ump_cmp_in_rcvbase(UMPSocket* u_sock,guint16 x,guint16 y)
-{
-	gint32 a=x,b=y;
-	guint16 circle_point=u_sock->their_data_seq_base+(G_MAXUINT16 >> 1);
-	if(a<=circle_point){
-		a+=G_MAXUINT16+1;
-	}
-	if(b<=circle_point){
-		b+=G_MAXUINT16+1;
-	}
-	return a-b;
-}
-
-gint32 ump_seq_to_relative_via_sndstartseq(UMPSocket* u_sock,guint16 seq)
-{
-	gint32 a=seq,b=u_sock->our_data_start_seq;
-	guint16 circle_point=u_sock->our_data_start_seq+(G_MAXUINT16 >> 1);
-	if(a<=circle_point){
-		a+=G_MAXUINT16+1;
-	}
-	if(b<=circle_point){
-		b+=G_MAXUINT16+1;
-	}
-	return a-b;
-}
-
-guint16 ump_relative_to_seq_via_sndstartseq(UMPSocket* u_sock,guint l){
-	return ((guint)u_sock->our_data_start_seq)+(guint)l;
-}
-
-guint16 ump_relative_to_seq_via_rcvseq(UMPSocket* u_sock,guint l){
-	return ((guint)u_sock->their_data_seq_base)+(guint)l;
-}
-
 GList* ump_list_remove_link(GList* list,GList* llink,gint* list_len){
 	if((*list_len)>0){
 		(*list_len)--;
@@ -161,7 +114,7 @@ void ump_send_reset_packet(UMPSocket* u_sock)
 	rst_p=u_packet_new(P_CONTROL,P_OUTGOING);
 	u_packet_set_flag(rst_p,UP_CTRL_RST);
 	data=u_packet_to_binary(rst_p,&data_len);
-	ump_sendto(u_sock->u_core,data,data_len,&u_sock->their_addr);
+	ump_sendto(ump_sock_umpcore(u_sock),data,data_len,ump_sock_remote_peer(u_sock));
 	u_packet_free(rst_p);
 
 	return;

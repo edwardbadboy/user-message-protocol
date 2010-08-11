@@ -22,7 +22,7 @@
 #include "mevent_public.h"
 #include "core_thread.h"
 #include "ump_misc.h"
-#include "ump_sock.h"
+#include "ump_sock_public.h"
 #include "upacket_public.h"
 #include "debug_out.h"
 
@@ -172,18 +172,18 @@ UMP_DLLDES UMPSocket* ump_connect(UMPCore* u_core,struct sockaddr_in *their_addr
 	u_sock=g_hash_table_lookup(u_core->backlog_umps,their_addr);
 	if(u_sock!=NULL){
 		g_hash_table_remove(u_core->backlog_umps,their_addr);
-		g_mutex_lock(u_sock->pubic_state_lock);
-			if(u_sock->public_state==UMP_CLOSED || u_sock->public_state==UMP_CLOSING){
+		ump_sock_lock_public_state(u_sock);
+			if(ump_sock_public_state(u_sock)==UMP_CLOSED || ump_sock_public_state(u_sock)==UMP_CLOSING){
 				//处理一种特殊情况，后备队列中的连接被主动关闭，而我们却开始主动连接
-				g_mutex_unlock(u_sock->pubic_state_lock);
+				ump_sock_unlock_public_state(u_sock);
 				g_mutex_unlock(u_core->umps_lock);
 				return NULL;
 			}
-		g_mutex_unlock(u_sock->pubic_state_lock);
+		ump_sock_unlock_public_state(u_sock);
 	}else{
 		u_sock=ump_sock_new(u_core,their_addr);
 	}
-	g_hash_table_insert(u_core->act_connect,&u_sock->their_addr,u_sock);
+	g_hash_table_insert(u_core->act_connect,ump_sock_remote_peer(u_sock),u_sock);
 	g_mutex_unlock(u_core->umps_lock);
 
 	connect_r=ump_sock_connect(u_sock);
@@ -194,7 +194,7 @@ UMP_DLLDES UMPSocket* ump_connect(UMPCore* u_core,struct sockaddr_in *their_addr
 			ump_sock_free(u_sock);
 			u_sock=NULL;
 		}else{
-			g_hash_table_insert(u_core->umps,&u_sock->their_addr,u_sock);
+			g_hash_table_insert(u_core->umps,ump_sock_remote_peer(u_sock),u_sock);
 		}
 	g_mutex_unlock(u_core->umps_lock);
 
@@ -215,22 +215,22 @@ UMP_DLLDES UMPSocket* ump_accept(UMPCore* u_core)
 			while (g_hash_table_iter_next (&iter, &key, &value)) 
 			{
 				s=value;
-				g_mutex_lock(s->pubic_state_lock);
-					if(s->public_state==UMP_ESTABLISHED){
+				ump_sock_lock_public_state(s);
+					if(ump_sock_public_state(s)==UMP_ESTABLISHED){
 						if(u_s==NULL){
 							u_s=s;
 						}else{
 							//搜索后备队列中最早建立好的连接
-							if(ump_time_sub(&u_s->connect_time,&s->connect_time)>0){
+							if(ump_time_sub(ump_sock_connect_time(u_s),ump_sock_connect_time(s))>0){
 								u_s=s;
 							}
 						}
 					}
-				g_mutex_unlock(s->pubic_state_lock);
+				ump_sock_unlock_public_state(s);
 			}
 			if(u_s!=NULL){
-				g_hash_table_remove(u_core->backlog_umps,&u_s->their_addr);
-				g_hash_table_insert(u_core->umps,&u_s->their_addr,u_s);
+				g_hash_table_remove(u_core->backlog_umps,ump_sock_remote_peer(u_s));
+				g_hash_table_insert(u_core->umps,ump_sock_remote_peer(u_s),u_s);
 			}
 		g_mutex_unlock(u_core->umps_lock);
 	}
@@ -241,25 +241,25 @@ UMP_DLLDES void ump_close(UMPSocket* u_sock)
 {
 	UMPCore* u_core=NULL;
 	UMPSocket* u_s=NULL;
-	u_core=u_sock->u_core;
+	u_core=ump_sock_umpcore(u_sock);
 
 	ump_sock_close(u_sock);
 
 	g_mutex_lock(u_core->umps_lock);
-		u_s=g_hash_table_lookup(u_core->act_connect,&u_sock->their_addr);
+		u_s=g_hash_table_lookup(u_core->act_connect,ump_sock_remote_peer(u_sock));
 		if(u_s!=NULL){
-			g_hash_table_remove(u_core->act_connect,&u_sock->their_addr);
+			g_hash_table_remove(u_core->act_connect,ump_sock_remote_peer(u_sock));
 		}
-		u_s=g_hash_table_lookup(u_core->backlog_umps,&u_sock->their_addr);
+		u_s=g_hash_table_lookup(u_core->backlog_umps,ump_sock_remote_peer(u_sock));
 		if(u_s!=NULL){
-			g_hash_table_remove(u_core->backlog_umps,&u_sock->their_addr);
+			g_hash_table_remove(u_core->backlog_umps,ump_sock_remote_peer(u_sock));
 		}
-		u_s=g_hash_table_lookup(u_core->umps,&u_sock->their_addr);
+		u_s=g_hash_table_lookup(u_core->umps,ump_sock_remote_peer(u_sock));
 		if(u_s!=NULL){
-			g_hash_table_remove(u_core->umps,&u_sock->their_addr);
+			g_hash_table_remove(u_core->umps,ump_sock_remote_peer(u_sock));
 		}
-		if(g_hash_table_lookup(u_core->umps,&u_sock->their_addr)==NULL){
-			g_hash_table_insert(u_core->closed_umps,&u_sock->their_addr,u_sock);
+		if(g_hash_table_lookup(u_core->umps,ump_sock_remote_peer(u_sock))==NULL){
+			g_hash_table_insert(u_core->closed_umps,ump_sock_remote_peer(u_sock),u_sock);
 		}
 	g_mutex_unlock(u_core->umps_lock);
 	return;
@@ -277,8 +277,8 @@ UMP_DLLDES int ump_send_message(UMPSocket* u_connection,void * data,int data_len
 		return -1;
 	}
 
-	pkts_count=(data_len / ((signed int)u_connection->our_mss));
-	if(pkts_count* ((signed int)u_connection->our_mss) < data_len){
+	pkts_count=(data_len / ((signed int)ump_sock_our_mss(u_connection)));
+	if(pkts_count* ((signed int)ump_sock_our_mss(u_connection)) < data_len){
 		++pkts_count;
 	}
 
@@ -290,7 +290,7 @@ UMP_DLLDES int ump_send_message(UMPSocket* u_connection,void * data,int data_len
 #endif
 
 	while(total_len<data_len){
-		p_size=MIN(u_connection->our_mss,data_len-total_len);
+		p_size=MIN(ump_sock_our_mss(u_connection),data_len-total_len);
 		p=u_packet_new(P_DATA,P_OUTGOING);
 		u_packet_set_data(p,user_data,p_size);
 		user_data+=p_size;

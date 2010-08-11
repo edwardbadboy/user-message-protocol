@@ -292,7 +292,11 @@
 				>
 			</File>
 			<File
-				RelativePath=".\ump_sock.h"
+				RelativePath=".\ump_sock_private.h"
+				>
+			</File>
+			<File
+				RelativePath=".\ump_sock_public.h"
 				>
 			</File>
 			<File
