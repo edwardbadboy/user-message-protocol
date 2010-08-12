@@ -9,6 +9,8 @@
 #define UP_CTRL_SYN 8
 #define UP_CTRL_FIN 4
 #define UP_CTRL_RST 2
+//实际编程时并没有使用UP_CTRL_HRT来发送心跳包
+//而是强制推一个UP_DATA_ACK来发送心跳包
 #define UP_CTRL_HRT 1
 
 #define UP_CTRL_SEQ 128

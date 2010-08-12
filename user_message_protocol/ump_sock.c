@@ -1000,11 +1000,16 @@ static void ump_handle_data_ack(UMPSocket *u_sock,UMPPacket* u_p,glong *sleep_ms
 	}
 	
 	if(gotack==TRUE){
-		if(ack_seq==u_sock->our_data_seq_base){
+		if(ack_seq==u_sock->our_data_seq_base && ump_cmp_in_sndbase(u_sock,u_sock->our_data_seq_base,u_sock->our_data_sent)>0){
+			//如果ack和我们的发送序号基是一样的，说明收到了重复的ack
+			//然而如果我们正在执行主动窗口探察，也会收到重复的ack
+			//当发送序号基大于已发送数据时，表明对方也已经确认了所有的数据
+			//因此这时如果有重复的ack，就不应该作快速重传，所以要写上第二个限制条件
+			//这个规则能避免主动窗口探察的反馈引起快速重传。也能避免一部分心跳包引起的快速重传
 			++(u_sock->ack_rep_count);
 		}
 		if(u_sock->ack_rep_count>1){
-			//快速重传
+			//快速重传 收到3个重复ACK就进行快速重传
 			ump_refresh_back_point(u_sock,ump_relative_to_seq_via_sndstartseq(u_sock,(guint)u_sock->our_data_pos));
 			u_sock->our_data_pos=ump_seq_to_relative_via_sndstartseq(u_sock,u_sock->our_data_seq_base);
 			u_sock->our_cwnd=MAX(u_sock->our_ssthresh+3,1);
