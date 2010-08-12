@@ -11,6 +11,7 @@
 #define UP_CTRL_RST 2
 //实际编程时并没有使用UP_CTRL_HRT来发送心跳包
 //而是强制推一个UP_DATA_ACK来发送心跳包
+//其原因是一般的ctrl类型的包都需要被ACK，而HEARTBEAT本身不需要被ACK
 #define UP_CTRL_HRT 1
 
 #define UP_CTRL_SEQ 128

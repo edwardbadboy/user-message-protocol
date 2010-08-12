@@ -106,7 +106,7 @@ gpointer receive_thread_func(gpointer data)
 				u_packet_free(u_p);
 				u_p=NULL;
 				g_mutex_unlock(u_core->umps_lock);
-				log_out("found no receiver\r\n");
+				log_out("found no receiver or backlog is full\r\n");
 				ump_send_reset_packet_to(u_core,&from);
 				continue;
 			}
@@ -167,7 +167,7 @@ gpointer cleaner_thread_func(gpointer data)
 		}
 		g_mutex_lock(u_core->umps_lock);
 			g_hash_table_foreach_remove(u_core->closed_umps,ump_clean_closed_sock,NULL);
-			g_hash_table_foreach_remove(u_core->act_connect,ump_clean_closed_sock,NULL);
+			//g_hash_table_foreach_remove(u_core->act_connect,ump_clean_closed_sock,NULL);不用清理act_connect，每次连接操作后无论是否成功都将自动清理
 			g_hash_table_foreach_remove(u_core->backlog_umps,ump_clean_closed_sock,NULL);
 		g_mutex_unlock(u_core->umps_lock);
 	}

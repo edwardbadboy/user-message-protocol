@@ -313,10 +313,11 @@ UMPPacket* u_packet_new(UMPPacketType p_type,UMPPacketDirection p_direction)
 	u_p->direction=p_direction;	
 	if(p_type==P_CONTROL){
 		u_p->ctrl_flags1 |= UMP_VER;
+		//不置位第6位，则为control packet
 	}
 	else{
 		u_p->data_flags |= UMP_VER;
-		u_p->data_flags |= UP_TYPE;
+		u_p->data_flags |= UP_TYPE;//置位第6位，则为data packet
 	}
 	return u_p;
 }

@@ -12,5 +12,4 @@ void m_event_broadcast(MEvent* mevent);
 void m_event_reset(MEvent* mevent);
 void m_event_wait(MEvent* mevent);
 gboolean m_event_timed_wait(MEvent* mevent,glong milliseconds);
-gint m_time_val_cmp(GTimeVal* t1,GTimeVal* t2);
 #endif

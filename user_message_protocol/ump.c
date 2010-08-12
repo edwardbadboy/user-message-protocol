@@ -125,10 +125,10 @@ UMP_DLLDES void ump_core_close(UMPCore* u_core)
 {
 	ump_stop_background_threads_and_socket(u_core);
 	g_mutex_lock(u_core->umps_lock);
-		g_hash_table_foreach(u_core->umps,ump_free_ump_sock,NULL);
-		g_hash_table_foreach(u_core->closed_umps,ump_free_ump_sock,NULL);
-		g_hash_table_foreach(u_core->act_connect,ump_free_ump_sock,NULL);
-		g_hash_table_foreach(u_core->backlog_umps,ump_free_ump_sock,NULL);
+		g_hash_table_foreach_remove(u_core->umps,ump_free_ump_sock,NULL);
+		g_hash_table_foreach_remove(u_core->closed_umps,ump_free_ump_sock,NULL);
+		g_hash_table_foreach_remove(u_core->act_connect,ump_free_ump_sock,NULL);
+		g_hash_table_foreach_remove(u_core->backlog_umps,ump_free_ump_sock,NULL);
 	g_mutex_unlock(u_core->umps_lock);
 	g_mutex_free(u_core->s_lock);
 	g_mutex_free(u_core->umps_lock);
@@ -146,13 +146,13 @@ UMP_DLLDES void ump_core_close(UMPCore* u_core)
 	return;
 }
 
-static void ump_free_ump_sock(gpointer key,gpointer value,gpointer user_data)
+static gboolean ump_free_ump_sock(gpointer key,gpointer value,gpointer user_data)
 {
 	UMPSocket* u_sock;
 
 	u_sock=value;
 	ump_sock_free(u_sock);
-	return;
+	return TRUE;
 }
 
 UMP_DLLDES UMPSocket* ump_connect(UMPCore* u_core,struct sockaddr_in *their_addr)
@@ -247,6 +247,7 @@ UMP_DLLDES void ump_close(UMPSocket* u_sock)
 {
 	UMPCore* u_core=NULL;
 	UMPSocket* u_s=NULL;
+	UMPSocket* closed_u_s=NULL;
 	u_core=ump_sock_umpcore(u_sock);
 
 	ump_sock_close(u_sock);
@@ -264,27 +265,34 @@ UMP_DLLDES void ump_close(UMPSocket* u_sock)
 		if(u_s!=NULL){
 			g_hash_table_remove(u_core->umps,ump_sock_remote_peer(u_sock));
 		}
-		if(g_hash_table_lookup(u_core->umps,ump_sock_remote_peer(u_sock))==NULL){
+		closed_u_s=g_hash_table_lookup(u_core->umps,ump_sock_remote_peer(u_sock));
+		if(closed_u_s==NULL){
 			g_hash_table_insert(u_core->closed_umps,ump_sock_remote_peer(u_sock),u_sock);
+		}else{
+			if(closed_u_s!=u_sock){
+				ump_sock_free(u_sock);
+			}
 		}
 	g_mutex_unlock(u_core->umps_lock);
 	return;
 }
 
-UMP_DLLDES int ump_send_message(UMPSocket* u_connection,void * data,int data_len)
+UMP_DLLDES int ump_send_message(UMPSocket* u_sock,void * data,int data_len)
 {
 	gboolean result;
 	//GList* packets=NULL,*head=NULL;
 	UMPPacket *p=NULL,**pkts=NULL;
 	char* user_data=data;
-	gint p_size,total_len=0,pkts_count=0,pkts_index=0;
+	gint p_size,total_len=0,pkts_count=0,pkts_index=0,our_mss=0;
 
 	if(data==NULL||data_len<=0){
 		return -1;
 	}
 
-	pkts_count=(data_len / ((signed int)ump_sock_our_mss(u_connection)));
-	if(pkts_count* ((signed int)ump_sock_our_mss(u_connection)) < data_len){
+	our_mss=ump_sock_our_mss(u_sock);
+
+	pkts_count=data_len / our_mss;
+	if(pkts_count*our_mss < data_len){
 		++pkts_count;
 	}
 
@@ -296,7 +304,7 @@ UMP_DLLDES int ump_send_message(UMPSocket* u_connection,void * data,int data_len
 #endif
 
 	while(total_len<data_len){
-		p_size=MIN(ump_sock_our_mss(u_connection),data_len-total_len);
+		p_size=MIN(our_mss,data_len-total_len);
 		p=u_packet_new(P_DATA,P_OUTGOING);
 		u_packet_set_data(p,user_data,p_size);
 		user_data+=p_size;
@@ -306,7 +314,7 @@ UMP_DLLDES int ump_send_message(UMPSocket* u_connection,void * data,int data_len
 		++pkts_index;
 	}
 
-	result=ump_sock_send(u_connection,pkts,pkts_count);
+	result=ump_sock_send(u_sock,pkts,pkts_count);
 
 	/*head=ump_list_first(packets);
 	while(head!=NULL){
@@ -329,11 +337,11 @@ UMP_DLLDES int ump_send_message(UMPSocket* u_connection,void * data,int data_len
 	return 0;
 }
 
-UMP_DLLDES int ump_receive_message(UMPSocket* u_connection,void **data, int* data_len)
+UMP_DLLDES int ump_receive_message(UMPSocket* u_sock,void **data, int* data_len)
 {
 	gchar *r=NULL;
 	gint len=0;
-	r=ump_sock_receive(u_connection,&len);
+	r=ump_sock_receive(u_sock,&len);
 	if(r==NULL){
 		*data_len=0;
 		*data=NULL;

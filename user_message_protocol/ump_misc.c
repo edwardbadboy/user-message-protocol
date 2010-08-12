@@ -100,6 +100,8 @@ GList* ump_list_append(GList* list,gpointer data,gint* list_len){
 	return g_list_append(list,data);
 }
 
+//g_list_first作用于元素时，会反回去找到元素所在列表的头
+//这里ump_list_first作用于元素时，直接返回以次元素打头的后续列表
 GList* ump_list_first(GList* l)
 {
 	return l;

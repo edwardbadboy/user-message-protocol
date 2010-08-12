@@ -32,8 +32,8 @@ UMP_DLLDES UMPSocket* ump_connect(UMPCore* u_core,struct sockaddr_in *their_addr
 UMP_DLLDES UMPSocket* ump_accept(UMPCore* u_core);
 UMP_DLLDES void ump_close(UMPSocket* u_sock);
 
-UMP_DLLDES int ump_send_message(UMPSocket* u_connection,void *data,int data_len);
-UMP_DLLDES int ump_receive_message(UMPSocket* u_connection,void **data,int *data_len);
+UMP_DLLDES int ump_send_message(UMPSocket* u_sock,void *data,int data_len);
+UMP_DLLDES int ump_receive_message(UMPSocket* u_sock,void **data,int *data_len);
 UMP_DLLDES int ump_free_message(void * data);
 
 UMP_DLLDES void ump_set_log_stream(FILE* f);

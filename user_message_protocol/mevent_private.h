@@ -11,4 +11,7 @@ typedef struct _m_event
 	GMutex * mutex_isset;
 	GCond * cond_isset;
 }MEvent;
+
+static gint m_time_val_cmp(GTimeVal* t1,GTimeVal* t2);
+static gboolean _m_event_timed_wait(MEvent* mevent,glong milliseconds);
 #endif

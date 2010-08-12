@@ -22,25 +22,25 @@
 #include "debug_out.h"
 
 static UMPSmFuncs u_sm_funcs[]={
-	{ump_closed_handle_ctrl,ump_closed_handle_ctrl_packet,ump_closed_handle_data_packet,ump_closed_connect,ump_closed_close,ump_closed_send,ump_closed_receive,ump_closed_enter_state,ump_closed_leave_state},
-	{ump_connecting_handle_ctrl,ump_connecting_handle_ctrl_packet,ump_connecting_handle_data_packet,ump_connecting_connect,ump_connecting_close,ump_connecting_send,ump_connecting_receive,ump_connecting_enter_state,ump_connecting_leave_state},
-	{ump_established_handle_ctrl,ump_established_handle_ctrl_packet,ump_established_handle_data_packet,ump_established_connect,ump_established_close,ump_established_send,ump_established_receive,ump_established_enter_state,ump_established_leave_state},
-	{ump_closing_handle_ctrl,ump_closing_handle_ctrl_packet,ump_closing_handle_data_packet,ump_closing_connect,ump_closing_close,ump_closing_send,ump_closing_receive,ump_closing_enter_state,ump_closing_leave_state},
+	{ump_closed_handle_ctrl,		ump_closed_handle_ctrl_packet,		ump_closed_handle_data_packet,		ump_closed_connect,		ump_closed_close,		ump_closed_send,		ump_closed_receive,		ump_closed_enter_state,		ump_closed_leave_state},
+	{ump_connecting_handle_ctrl,	ump_connecting_handle_ctrl_packet,	ump_connecting_handle_data_packet,	ump_connecting_connect,	ump_connecting_close,	ump_connecting_send,	ump_connecting_receive,	ump_connecting_enter_state,	ump_connecting_leave_state},
+	{ump_established_handle_ctrl,	ump_established_handle_ctrl_packet,	ump_established_handle_data_packet,	ump_established_connect,ump_established_close,	ump_established_send,	ump_established_receive,ump_established_enter_state,ump_established_leave_state},
+	{ump_closing_handle_ctrl,		ump_closing_handle_ctrl_packet,		ump_closing_handle_data_packet,		ump_closing_connect,	ump_closing_close,		ump_closing_send,		ump_closing_receive,	ump_closing_enter_state,	ump_closing_leave_state},
 };
 
 static UMPCtrlLockStateFuncs u_ctrl_sm_funcs[]={
-	{ump_ctrlunlocked_handle_ctrl,ump_ctrlunlocked_enter_state,ump_ctrlunlocked_leave_state,ump_ctrlunlocked_end_ctrl},
-	{ump_ctrlocked_handle_ctrl,ump_ctrllocked_enter_state,ump_ctrllocked_leave_state,ump_ctrllocked_end_ctrl}
+	{ump_ctrlunlocked_handle_ctrl,	ump_ctrlunlocked_enter_state,	ump_ctrlunlocked_leave_state,	ump_ctrlunlocked_end_ctrl},
+	{ump_ctrlocked_handle_ctrl,		ump_ctrllocked_enter_state,		ump_ctrllocked_leave_state,		ump_ctrllocked_end_ctrl}
 };
 
 static UMPRecLockStateFuncs u_rec_sm_funcs[]={
-	{ump_recunlocked_handle_rec,ump_recunlocked_enter_state,ump_recunlocked_leave_state,ump_recunlocked_end_rec},
-	{ump_reclocked_handle_rec,ump_reclocked_enter_state,ump_reclocked_leave_state,ump_reclocked_end_rec}
+	{ump_recunlocked_handle_rec,	ump_recunlocked_enter_state,ump_recunlocked_leave_state,ump_recunlocked_end_rec},
+	{ump_reclocked_handle_rec,		ump_reclocked_enter_state,	ump_reclocked_leave_state,	ump_reclocked_end_rec}
 };
 
 static UMPSndLockStateFuncs u_snd_sm_funcs[]={
 	{ump_sndunlocked_handle_snd,ump_sndunlocked_enter_state,ump_sndunlocked_leave_state,ump_sndunlocked_end_snd,ump_sndunlocked_handle_send_data},
-	{ump_sndlocked_handle_snd,ump_sndlocked_enter_state,ump_sndlocked_leave_state,ump_sndlocked_end_snd,ump_sndlocked_handle_send_data}
+	{ump_sndlocked_handle_snd,	ump_sndlocked_enter_state,	ump_sndlocked_leave_state,	ump_sndlocked_end_snd,	ump_sndlocked_handle_send_data}
 };
 
 static gpointer ump_sock_thread_func(gpointer data)
@@ -69,7 +69,9 @@ static gpointer ump_sock_thread_func(gpointer data)
 		if(u_s->error_occured==FALSE){
 			u_s->buffer_load=ump_sock_fetch_received_packets(u_s,&sleep_ms);
 
-			ump_handle_ctrl_packet(u_s,&sleep_ms);
+			ump_handle_ctrl_packet(u_s,&sleep_ms);//此句执行完后，才会设置u_s->error_occured的值，因此由于值会变化，下面要多检查一次。
+		}
+		if(u_s->error_occured==FALSE){
 			ump_handle_data_packet(u_s,&sleep_ms);
 			ump_handle_data_timeout(u_s,&sleep_ms);
 			ump_refresh_our_rwnd_pos(u_s);
@@ -120,263 +122,6 @@ static guint ump_sock_fetch_received_packets(UMPSocket* u_s,glong* sleep_ms)
 	return buffer_load;
 }
 
-UMPSocket* ump_sock_new(UMPCore* u_core,struct sockaddr_in *their_addr)
-{
-	UMPSocket* u_sock;
-#ifdef DEBUG_MEMORY_LEAK
-	u_sock=malloc(sizeof(UMPSocket));
-	memset(u_sock,0,sizeof(UMPSocket));
-#else
-	u_sock=g_malloc0(sizeof(UMPSocket));
-#endif
-	//memset(u_sock,0,sizeof(UMPSocket));
-	u_sock->u_core=u_core;
-	u_sock->their_addr=(*their_addr);
-	//mutex、event、queue等的初始化，线程的启动
-	u_sock->public_state_lock=g_mutex_new();
-	u_sock->state=UMP_CLOSED;
-	ump_sock_lock_public_state(u_sock);
-		u_sock->public_state=UMP_CLOSED;
-	g_mutex_unlock(u_sock->public_state_lock);
-
-	u_sock->thread_stop_work_lock=g_mutex_new();
-
-	u_sock->our_mss=DEFAULT_MSS;
-	u_sock->our_cwnd=1;
-	u_sock->our_ssthresh=MAX_CWND;
-	u_sock->our_rwnd=REC_QUEUE_LIMIT/2;
-
-	u_sock->rto_cpt=rto_computer_new();
-
-	u_sock->rec_packets_lock=g_mutex_new();
-	u_sock->rec_control_packets=g_queue_new();
-	u_sock->rec_data_packets=g_queue_new();
-
-	u_sock->do_work_event=m_event_new(FALSE,TRUE);
-
-	u_sock->ctrl_para_lock=g_mutex_new();
-	u_sock->ctrl_locked=UMP_UNLOCKED;
-	u_sock->ctrl_done=m_event_new(FALSE,TRUE);
-
-	u_sock->snd_para_lock=g_mutex_new();
-	u_sock->snd_locked=UMP_UNLOCKED;
-	u_sock->snd_done=m_event_new(FALSE,TRUE);
-
-	u_sock->rec_para_lock=g_mutex_new();
-	u_sock->rec_done=m_event_new(FALSE,TRUE);
-
-	u_sock->our_ctrl_seq=(guint16)g_random_int_range(0,G_MAXUINT16);//SEQ_START;
-	u_sock->our_data_start_seq=u_sock->our_ctrl_seq;
-	u_sock->our_data_seq_base=u_sock->our_ctrl_seq;
-	//u_sock->our_data_pos=0;
-	ump_init_ctrl_rto(u_sock);
-	u_sock->ctrl_packet_sent=TRUE;
-
-	u_sock->error_occured=FALSE;
-	u_sock->send_reset_packet=FALSE;
-
-	u_sock->sock_thread=g_thread_create(ump_sock_thread_func,u_sock,TRUE,NULL);
-	if(u_sock->sock_thread==NULL){
-		ump_sock_free(u_sock);
-		u_sock=NULL;
-	}
-	return u_sock;
-}
-
-
-//ump_sock_free目前只会由主清理线程、主接收线程调用或用户线程通过ump_connect调用
-//调用前必须锁定sock所在的哈希表，以避免数据损毁
-void ump_sock_free(UMPSocket* u_sock)
-{
-	UMPPacket* p;
-	GList* llist=NULL;
-	if(u_sock->sock_thread!=NULL){
-		g_mutex_lock(u_sock->thread_stop_work_lock);
-			u_sock->thread_stop_work=TRUE;
-		g_mutex_unlock(u_sock->thread_stop_work_lock);
-		m_event_set(u_sock->do_work_event);
-		g_thread_join(u_sock->sock_thread);
-	}
-	//执行清理工作，释放控制调用锁和其他锁
-
-	//要向用户的控制线程报告控制失败
-	ump_end_ctrl(u_sock,METHOD_ALL_CALL,FALSE);
-	ump_end_send(u_sock,FALSE);
-	ump_end_receive(u_sock,FALSE);
-
-	while(g_queue_is_empty(u_sock->rec_control_packets)==FALSE){
-			p=g_queue_pop_tail(u_sock->rec_control_packets);
-			u_packet_free(p);
-	}
-	while(g_queue_is_empty(u_sock->rec_data_packets)==FALSE){
-		p=g_queue_pop_tail(u_sock->rec_data_packets);
-		u_packet_free(p);
-	}
-	for(llist=ump_list_first(u_sock->rcv_data_packets);llist!=NULL;llist=llist->next)
-	{
-		u_packet_free(llist->data);
-	}
-	g_list_free(u_sock->rcv_data_packets);
-	u_sock->local_data_packets_count=0;
-	for(llist=ump_list_first(u_sock->local_data_packets);llist!=NULL;llist=llist->next)
-	{
-		u_packet_free(llist->data);
-	}
-	g_list_free(u_sock->local_data_packets);
-	for(llist=ump_list_first(u_sock->local_ctrl_packets);llist!=NULL;llist=llist->next)
-	{
-		u_packet_free(llist->data);
-	}
-	g_list_free(u_sock->local_ctrl_packets);
-	for(llist=ump_list_first(u_sock->rec_msg_packets);llist!=NULL;llist=llist->next)
-	{
-		u_packet_free(llist->data);
-	}
-	g_list_free(u_sock->rec_msg_packets);
-	g_mutex_free(u_sock->thread_stop_work_lock);
-	g_mutex_free(u_sock->public_state_lock);
-	g_mutex_free(u_sock->rec_packets_lock);
-	g_mutex_free(u_sock->ctrl_para_lock);
-	g_mutex_free(u_sock->snd_para_lock);
-	g_mutex_free(u_sock->rec_para_lock);
-	m_event_free(u_sock->do_work_event);
-	m_event_free(u_sock->ctrl_done);
-	m_event_free(u_sock->snd_done);
-	m_event_free(u_sock->rec_done);
-	if(u_sock->ctrl_packet_to_send!=NULL){
-		u_packet_free(u_sock->ctrl_packet_to_send);
-		u_sock->ctrl_packet_to_send=NULL;
-	}
-	if(u_sock->up_req_wnd!=NULL){
-		u_packet_free(u_sock->up_req_wnd);
-		u_sock->up_req_wnd=NULL;
-	}
-	rto_computer_free(u_sock->rto_cpt);
-#ifdef DEBUG_MEMORY_LEAK
-	free(u_sock);
-#else
-	g_free(u_sock);
-#endif
-	return;
-}
-
-gboolean ump_sock_connect(UMPSocket* u_sock)//,struct sockaddr_in their_addr)
-{
-	UMPCtrlParam pa;
-	gboolean r=FALSE;
-
-	pa.ctrl_param_struct=NULL;
-	pa.ctrl_method=METHOD_CONNECT;
-	r=ump_sock_control_call(u_sock,&pa);
-	return r;
-}
-
-gboolean ump_sock_close(UMPSocket* u_sock)
-{
-	UMPCtrlParam pa;
-	gboolean r=FALSE;
-
-	pa.ctrl_param_struct=NULL;
-	pa.ctrl_method=METHOD_CLOSE;
-	r=ump_sock_control_call(u_sock,&pa);
-	return r;
-}
-
-//加锁，将参数放置到UMPSocket里，然后激发，接着等待
-gboolean ump_sock_send(UMPSocket* u_sock,UMPPacket** data_packets,gint packets_count)
-{
-	g_mutex_lock(u_sock->snd_para_lock);
-		u_sock->snd_packets=data_packets;
-		u_sock->snd_packets_count=packets_count;
-		m_event_reset(u_sock->snd_done);
-	g_mutex_unlock(u_sock->snd_para_lock);
-	m_event_set(u_sock->do_work_event);
-#ifdef VERBOSE
-	log_out("send issued\r\n");
-#endif
-	m_event_wait(u_sock->snd_done);
-	return u_sock->snd_ok;
-}
-
-//加锁，将参数放置到UMPSocket里，然后激发，接着等待
-gchar* ump_sock_receive(UMPSocket* u_sock,gint *rec_len)
-{
-	gchar* data=NULL;
-	g_mutex_lock(u_sock->rec_para_lock);
-		u_sock->receive_called=TRUE;
-		m_event_reset(u_sock->rec_done);
-	g_mutex_unlock(u_sock->rec_para_lock);
-	m_event_set(u_sock->do_work_event);
-	m_event_wait(u_sock->rec_done);
-	if(u_sock->rec_ok==FALSE){
-		*rec_len=0;
-		return NULL;
-	}
-	*rec_len=u_sock->rec_msg_l;
-	data=u_sock->rec_msg;
-	u_sock->rec_msg=NULL;
-	return data;
-}
-
-struct sockaddr_in* ump_sock_remote_peer(UMPSocket* u_sock){
-	return &(u_sock->their_addr);
-}
-
-void ump_sock_lock_rec_packets(UMPSocket *u_sock){
-	g_mutex_lock(u_sock->rec_packets_lock);
-}
-
-void ump_sock_unlock_rec_packets(UMPSocket *u_sock){
-	g_mutex_unlock(u_sock->rec_packets_lock);
-}
-
-gboolean ump_sock_rec_packets_space_available(UMPSocket *u_sock){
-	return g_queue_get_length(u_sock->rec_data_packets)<REC_QUEUE_LIMIT;
-}
-
-void ump_sock_rec_packets_append(UMPSocket *u_sock,UMPPacket *u_p){
-	g_queue_push_head(u_sock->rec_data_packets,u_p);
-}
-
-gboolean ump_sock_rec_ctrl_packets_space_available(UMPSocket *u_sock){
-	return g_queue_is_empty(u_sock->rec_control_packets);
-}
-
-void ump_sock_rec_ctrl_packets_append(UMPSocket *u_sock,UMPPacket *u_p){
-	g_queue_push_head(u_sock->rec_control_packets,u_p);
-}
-
-void ump_sock_notify_do_work(UMPSocket *u_sock){
-	m_event_set(u_sock->do_work_event);
-}
-
-void ump_sock_lock_public_state(UMPSocket *u_sock){
-	g_mutex_lock(u_sock->public_state_lock);;
-}
-
-void ump_sock_unlock_public_state(UMPSocket *u_sock){
-	g_mutex_unlock(u_sock->public_state_lock);;
-}
-
-UMPSockState ump_sock_public_state(UMPSocket *u_sock){
-	return u_sock->public_state;
-}
-
-GTimeVal* ump_sock_close_time(UMPSocket *u_sock){
-	return &(u_sock->close_time);
-}
-
-GTimeVal* ump_sock_connect_time(UMPSocket *u_sock){
-	return &(u_sock->connect_time);
-}
-
-UMPCore* ump_sock_umpcore(UMPSocket *u_sock){
-	return u_sock->u_core;
-}
-
-guint16 ump_sock_our_mss(UMPSocket *u_sock){
-	return u_sock->our_mss;
-}
 
 static gboolean ump_sock_control_call(UMPSocket* u_sock,UMPCtrlParam* call_param)
 {
@@ -1004,7 +749,7 @@ static void ump_handle_data_ack(UMPSocket *u_sock,UMPPacket* u_p,glong *sleep_ms
 			//如果ack和我们的发送序号基是一样的，说明收到了重复的ack
 			//然而如果我们正在执行主动窗口探察，也会收到重复的ack
 			//当发送序号基大于已发送数据时，表明对方也已经确认了所有的数据
-			//因此这时如果有重复的ack，就不应该作快速重传，所以要写上第二个限制条件
+			//因此这时如果有重复的ack，就不应该做快速重传，所以要写上第二个限制条件
 			//这个规则能避免主动窗口探察的反馈引起快速重传。也能避免一部分心跳包引起的快速重传
 			++(u_sock->ack_rep_count);
 		}
@@ -1874,4 +1619,266 @@ static guint16 ump_relative_to_seq_via_sndstartseq(UMPSocket* u_sock,guint l){
 
 static guint16 ump_relative_to_seq_via_rcvseq(UMPSocket* u_sock,guint l){
 	return ((guint)u_sock->their_data_seq_base)+(guint)l;
+}
+
+
+
+
+
+UMPSocket* ump_sock_new(UMPCore* u_core,struct sockaddr_in *their_addr)
+{
+	UMPSocket* u_sock;
+#ifdef DEBUG_MEMORY_LEAK
+	u_sock=malloc(sizeof(UMPSocket));
+	memset(u_sock,0,sizeof(UMPSocket));
+#else
+	u_sock=g_malloc0(sizeof(UMPSocket));
+#endif
+	//memset(u_sock,0,sizeof(UMPSocket));
+	u_sock->u_core=u_core;
+	u_sock->their_addr=(*their_addr);
+	//mutex、event、queue等的初始化，线程的启动
+	u_sock->public_state_lock=g_mutex_new();
+	u_sock->state=UMP_CLOSED;
+	ump_sock_lock_public_state(u_sock);
+		u_sock->public_state=UMP_CLOSED;
+	g_mutex_unlock(u_sock->public_state_lock);
+
+	u_sock->thread_stop_work_lock=g_mutex_new();
+
+	u_sock->our_mss=DEFAULT_MSS;
+	u_sock->our_cwnd=1;
+	u_sock->our_ssthresh=MAX_CWND;
+	u_sock->our_rwnd=REC_QUEUE_LIMIT/2;
+
+	u_sock->rto_cpt=rto_computer_new();
+
+	u_sock->rec_packets_lock=g_mutex_new();
+	u_sock->rec_control_packets=g_queue_new();
+	u_sock->rec_data_packets=g_queue_new();
+
+	u_sock->do_work_event=m_event_new(FALSE,TRUE);
+
+	u_sock->ctrl_para_lock=g_mutex_new();
+	u_sock->ctrl_locked=UMP_UNLOCKED;
+	u_sock->ctrl_done=m_event_new(FALSE,TRUE);
+
+	u_sock->snd_para_lock=g_mutex_new();
+	u_sock->snd_locked=UMP_UNLOCKED;
+	u_sock->snd_done=m_event_new(FALSE,TRUE);
+
+	u_sock->rec_para_lock=g_mutex_new();
+	u_sock->rec_done=m_event_new(FALSE,TRUE);
+
+	u_sock->our_ctrl_seq=(guint16)g_random_int_range(0,G_MAXUINT16);//SEQ_START;
+	u_sock->our_data_start_seq=u_sock->our_ctrl_seq;
+	u_sock->our_data_seq_base=u_sock->our_ctrl_seq;
+	//u_sock->our_data_pos=0;
+	ump_init_ctrl_rto(u_sock);
+	u_sock->ctrl_packet_sent=TRUE;
+
+	u_sock->error_occured=FALSE;
+	u_sock->send_reset_packet=FALSE;
+
+	u_sock->sock_thread=g_thread_create(ump_sock_thread_func,u_sock,TRUE,NULL);
+	if(u_sock->sock_thread==NULL){
+		ump_sock_free(u_sock);
+		u_sock=NULL;
+	}
+	return u_sock;
+}
+
+
+//ump_sock_free目前只会由主清理线程、主接收线程调用或用户线程通过ump_connect调用
+//调用前必须锁定sock所在的哈希表，以避免数据损毁
+void ump_sock_free(UMPSocket* u_sock)
+{
+	UMPPacket* p;
+	GList* llist=NULL;
+	if(u_sock->sock_thread!=NULL){
+		g_mutex_lock(u_sock->thread_stop_work_lock);
+			u_sock->thread_stop_work=TRUE;
+		g_mutex_unlock(u_sock->thread_stop_work_lock);
+		m_event_set(u_sock->do_work_event);
+		g_thread_join(u_sock->sock_thread);
+	}
+	//执行清理工作，释放控制调用锁和其他锁
+
+	//要向用户的控制线程报告控制失败
+	ump_end_ctrl(u_sock,METHOD_ALL_CALL,FALSE);
+	ump_end_send(u_sock,FALSE);
+	ump_end_receive(u_sock,FALSE);
+
+	while(g_queue_is_empty(u_sock->rec_control_packets)==FALSE){
+			p=g_queue_pop_tail(u_sock->rec_control_packets);
+			u_packet_free(p);
+	}
+	while(g_queue_is_empty(u_sock->rec_data_packets)==FALSE){
+		p=g_queue_pop_tail(u_sock->rec_data_packets);
+		u_packet_free(p);
+	}
+	for(llist=ump_list_first(u_sock->rcv_data_packets);llist!=NULL;llist=llist->next)
+	{
+		u_packet_free(llist->data);
+	}
+	g_list_free(u_sock->rcv_data_packets);
+	u_sock->local_data_packets_count=0;
+	for(llist=ump_list_first(u_sock->local_data_packets);llist!=NULL;llist=llist->next)
+	{
+		u_packet_free(llist->data);
+	}
+	g_list_free(u_sock->local_data_packets);
+	for(llist=ump_list_first(u_sock->local_ctrl_packets);llist!=NULL;llist=llist->next)
+	{
+		u_packet_free(llist->data);
+	}
+	g_list_free(u_sock->local_ctrl_packets);
+	for(llist=ump_list_first(u_sock->rec_msg_packets);llist!=NULL;llist=llist->next)
+	{
+		u_packet_free(llist->data);
+	}
+	g_list_free(u_sock->rec_msg_packets);
+	g_mutex_free(u_sock->thread_stop_work_lock);
+	g_mutex_free(u_sock->public_state_lock);
+	g_mutex_free(u_sock->rec_packets_lock);
+	g_mutex_free(u_sock->ctrl_para_lock);
+	g_mutex_free(u_sock->snd_para_lock);
+	g_mutex_free(u_sock->rec_para_lock);
+	m_event_free(u_sock->do_work_event);
+	m_event_free(u_sock->ctrl_done);
+	m_event_free(u_sock->snd_done);
+	m_event_free(u_sock->rec_done);
+	if(u_sock->ctrl_packet_to_send!=NULL){
+		u_packet_free(u_sock->ctrl_packet_to_send);
+		u_sock->ctrl_packet_to_send=NULL;
+	}
+	if(u_sock->up_req_wnd!=NULL){
+		u_packet_free(u_sock->up_req_wnd);
+		u_sock->up_req_wnd=NULL;
+	}
+	rto_computer_free(u_sock->rto_cpt);
+#ifdef DEBUG_MEMORY_LEAK
+	free(u_sock);
+#else
+	g_free(u_sock);
+#endif
+	return;
+}
+
+gboolean ump_sock_connect(UMPSocket* u_sock)//,struct sockaddr_in their_addr)
+{
+	UMPCtrlParam pa;
+	gboolean r=FALSE;
+
+	pa.ctrl_param_struct=NULL;
+	pa.ctrl_method=METHOD_CONNECT;
+	r=ump_sock_control_call(u_sock,&pa);
+	return r;
+}
+
+gboolean ump_sock_close(UMPSocket* u_sock)
+{
+	UMPCtrlParam pa;
+	gboolean r=FALSE;
+
+	pa.ctrl_param_struct=NULL;
+	pa.ctrl_method=METHOD_CLOSE;
+	r=ump_sock_control_call(u_sock,&pa);
+	return r;
+}
+
+//加锁，将参数放置到UMPSocket里，然后激发，接着等待
+gboolean ump_sock_send(UMPSocket* u_sock,UMPPacket** data_packets,gint packets_count)
+{
+	g_mutex_lock(u_sock->snd_para_lock);
+		u_sock->snd_packets=data_packets;
+		u_sock->snd_packets_count=packets_count;
+		m_event_reset(u_sock->snd_done);
+	g_mutex_unlock(u_sock->snd_para_lock);
+	m_event_set(u_sock->do_work_event);
+#ifdef VERBOSE
+	log_out("send issued\r\n");
+#endif
+	m_event_wait(u_sock->snd_done);
+	return u_sock->snd_ok;
+}
+
+//加锁，将参数放置到UMPSocket里，然后激发，接着等待
+gchar* ump_sock_receive(UMPSocket* u_sock,gint *rec_len)
+{
+	gchar* data=NULL;
+	g_mutex_lock(u_sock->rec_para_lock);
+		u_sock->receive_called=TRUE;
+		m_event_reset(u_sock->rec_done);
+	g_mutex_unlock(u_sock->rec_para_lock);
+	m_event_set(u_sock->do_work_event);
+	m_event_wait(u_sock->rec_done);
+	if(u_sock->rec_ok==FALSE){
+		*rec_len=0;
+		return NULL;
+	}
+	*rec_len=u_sock->rec_msg_l;
+	data=u_sock->rec_msg;
+	u_sock->rec_msg=NULL;
+	return data;
+}
+
+struct sockaddr_in* ump_sock_remote_peer(UMPSocket* u_sock){
+	return &(u_sock->their_addr);
+}
+
+void ump_sock_lock_rec_packets(UMPSocket *u_sock){
+	g_mutex_lock(u_sock->rec_packets_lock);
+}
+
+void ump_sock_unlock_rec_packets(UMPSocket *u_sock){
+	g_mutex_unlock(u_sock->rec_packets_lock);
+}
+
+gboolean ump_sock_rec_packets_space_available(UMPSocket *u_sock){
+	return g_queue_get_length(u_sock->rec_data_packets)<REC_QUEUE_LIMIT;
+}
+
+void ump_sock_rec_packets_append(UMPSocket *u_sock,UMPPacket *u_p){
+	g_queue_push_head(u_sock->rec_data_packets,u_p);
+}
+
+gboolean ump_sock_rec_ctrl_packets_space_available(UMPSocket *u_sock){
+	return g_queue_is_empty(u_sock->rec_control_packets);
+}
+
+void ump_sock_rec_ctrl_packets_append(UMPSocket *u_sock,UMPPacket *u_p){
+	g_queue_push_head(u_sock->rec_control_packets,u_p);
+}
+
+void ump_sock_notify_do_work(UMPSocket *u_sock){
+	m_event_set(u_sock->do_work_event);
+}
+
+void ump_sock_lock_public_state(UMPSocket *u_sock){
+	g_mutex_lock(u_sock->public_state_lock);;
+}
+
+void ump_sock_unlock_public_state(UMPSocket *u_sock){
+	g_mutex_unlock(u_sock->public_state_lock);;
+}
+
+UMPSockState ump_sock_public_state(UMPSocket *u_sock){
+	return u_sock->public_state;
+}
+
+GTimeVal* ump_sock_close_time(UMPSocket *u_sock){
+	return &(u_sock->close_time);
+}
+
+GTimeVal* ump_sock_connect_time(UMPSocket *u_sock){
+	return &(u_sock->connect_time);
+}
+
+UMPCore* ump_sock_umpcore(UMPSocket *u_sock){
+	return u_sock->u_core;
+}
+
+guint16 ump_sock_our_mss(UMPSocket *u_sock){
+	return u_sock->our_mss;
 }

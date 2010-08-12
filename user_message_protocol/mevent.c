@@ -41,6 +41,7 @@ MEvent* m_event_new(gboolean isset,gboolean auto_reset)
 
 	mepri->cond_isset=g_cond_new();
 	if(mepri->cond_isset==NULL){
+		g_mutex_free(mepri->mutex_isset);
 #ifdef DEBUG_MEMORY_LEAK
 		free(mepri);
 #else
@@ -142,7 +143,7 @@ gboolean m_event_timed_wait(MEvent* mevent,glong milliseconds)
 	}
 }
 
-gint m_time_val_cmp(GTimeVal* t1,GTimeVal* t2)
+static gint m_time_val_cmp(GTimeVal* t1,GTimeVal* t2)
 {
 	if(t1->tv_sec > t2->tv_sec){
 		return 1;

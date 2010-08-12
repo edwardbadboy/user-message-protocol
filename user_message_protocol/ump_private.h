@@ -57,5 +57,5 @@ typedef struct _ump_core
 }UMPCore;
 
 static void ump_stop_background_threads_and_socket(UMPCore *u_core);
-static void ump_free_ump_sock(gpointer key,gpointer value,gpointer user_data);
+static gboolean ump_free_ump_sock(gpointer key,gpointer value,gpointer user_data);
 #endif
