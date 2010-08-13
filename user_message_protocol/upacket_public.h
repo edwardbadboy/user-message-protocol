@@ -6,19 +6,20 @@
 #define UMP_VER 64
 #define UP_VER 192
 #define UP_TYPE 32
+#define UP_CTRL_RESERVE0 16
 #define UP_CTRL_SYN 8
 #define UP_CTRL_FIN 4
 #define UP_CTRL_RST 2
-//实际编程时并没有使用UP_CTRL_HRT来发送心跳包
-//而是强制推一个UP_DATA_ACK来发送心跳包
-//其原因是一般的ctrl类型的包都需要被ACK，而HEARTBEAT本身不需要被ACK
-#define UP_CTRL_HRT 1
+#define UP_CTRL_RESERVE1 1
 
 #define UP_CTRL_SEQ 128
 #define UP_CTRL_ACK 64
 #define UP_CTRL_MSS 32
 #define UP_CTRL_WND 16
+#define UP_CTRL_RESERVE2 8
 #define UP_CTRL_EXT 7
+
+//目前由于编程实现不够优雅的缘故，UP_CTRL_RESERVE0-2以及UP_CTRL_EXT都不能使用。如果要使用，需要修改存取这些位的函数。
 
 #define UP_DATA_REQWND 16
 #define UP_DATA_BDR 8
