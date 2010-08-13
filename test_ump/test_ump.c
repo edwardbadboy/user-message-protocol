@@ -19,8 +19,8 @@
 #include "../user_message_protocol/ump_public.h"
 void send_data(UMPSocket *u_sock);
 void receive_data(UMPSocket *u_sock);
-void send_file(UMPSocket *u_sock);
-void receive_file(UMPSocket *u_sock);
+void send_file(UMPSocket *u_sock,char* filename);
+void receive_file(UMPSocket *u_sock,char* filename);
 
 //typedef void (*test_func1)(void);
 //
@@ -71,9 +71,12 @@ int main(int argc, char* argv[])
 	UMPCore* u_core;
 	UMPSocket* u_sock;
 	struct sockaddr_in our,their;
+	char* filename=NULL;
 
 	//g_mem_set_vtable(&memvt);
+#ifdef MEM_PROFILE
 	g_mem_set_vtable(glib_mem_profiler_table);
+#endif
 
 	#ifdef DEBUG_MEMORY_LEAK
 		_CrtSetDbgFlag ( _CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF );
@@ -117,6 +120,14 @@ int main(int argc, char* argv[])
 		g_print("error reading theiraddress\n");
 		getchar();
 	}
+	filename=g_key_file_get_string(etc,"general","filename",NULL);
+	if(filename==NULL){
+		g_free(our_address);
+		g_free(their_address);
+		g_key_file_free(etc);
+		g_print("error reading filename\n");
+		getchar();
+	}
 	u_listen=g_key_file_get_boolean(etc,"general","listen",NULL);
 	g_key_file_free(etc);
 
@@ -133,6 +144,7 @@ int main(int argc, char* argv[])
 	if(u_core==NULL){
 		g_free(our_address);
 		g_free(their_address);
+		g_free(filename);
 		g_print("bind error\n");
 		getchar();
 		return 0;
@@ -144,7 +156,7 @@ int main(int argc, char* argv[])
 		if(u_sock!=NULL){
 			g_print("accept ok\n");
 			//send_data(u_sock);
-			send_file(u_sock);
+			send_file(u_sock,filename);
 		}else{
 			g_print("accept failed\n");
 		}
@@ -154,7 +166,7 @@ int main(int argc, char* argv[])
 		if(u_sock!=NULL){
 			g_print("connect ok\n");
 			//receive_data(u_sock);
-			receive_file(u_sock);
+			receive_file(u_sock,filename);
 		}else{
 			g_print("connect failed\n");
 		}
@@ -166,10 +178,16 @@ int main(int argc, char* argv[])
 		ump_close(u_sock);
 	}
 	g_print("close ok\n");
+
+	g_free(our_address);
+	g_free(their_address);
+	g_free(filename);
 	#ifdef DEBUG_MEMORY_LEAK
 		//_CrtDumpMemoryLeaks();
 	#endif
+#ifdef MEM_PROFILE
 	g_mem_profile();
+#endif
 	getchar();
 	return 0;
 }
@@ -224,7 +242,7 @@ void receive_data(UMPSocket *u_sock)
 	return;
 }
 
-void send_file(UMPSocket *u_sock)
+void send_file(UMPSocket *u_sock,char* filename)
 {
 	FILE* f=NULL;
 	char* buffer=NULL;
@@ -233,7 +251,7 @@ void send_file(UMPSocket *u_sock)
 	int r=0;
 	buffer=malloc(l);
 
-	f=fopen("plant vs zombie.rar","rb");
+	f=fopen(filename,"rb");
 	if(f==NULL){
 		perror("open file");
 		free(buffer);
@@ -258,7 +276,7 @@ void send_file(UMPSocket *u_sock)
 	return;
 }
 
-void receive_file(UMPSocket *u_sock)
+void receive_file(UMPSocket *u_sock,char* filename)
 {
 	FILE* f=NULL;
 	char *buffer=NULL;
@@ -266,7 +284,7 @@ void receive_file(UMPSocket *u_sock)
 	int written=0;
 	int r=0;
 
-	f=fopen("plant vs zombie1.rar","wb");
+	f=fopen(filename,"wb");
 	if(f==NULL){
 		perror("open file");
 		return;

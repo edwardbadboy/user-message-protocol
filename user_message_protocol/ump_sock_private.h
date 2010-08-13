@@ -10,6 +10,7 @@
 #define SEQ_START 0
 #define TIMEOUT_LIMIT 15000
 #define HEATTBEAT_INTERVAL 10000
+#define RAND_DROP_RATE 2
 
 
 static gint32 ump_cmp_in_sndbase(UMPSocket* u_sock,guint16 x,guint16 y);

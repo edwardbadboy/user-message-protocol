@@ -1,12 +1,29 @@
 user message protocol is a protocol handles reliable data transmission over udp.
 
 feartures:
-use sequence number to identify the packet to send
-acknowledge the packet received
-retransmission on timeouts
-compute and verify checksum
-flow control: sliding window
-congestion control: slow start, congestion avoidance, fast retransmission and recovery
-silly window syndrome handling: delayed ack, active window detection
-rtt computation: ack of a retransmitted packet doesn't contribute to the estimated rtt.
+	use sequence number to identify the packet to send
+	acknowledge the packet received
+	retransmission on timeouts
+	compute and verify checksum
+	full dumplex
+	support simultaneous connect/close
+	flow control: sliding window
+	congestion control: slow start, congestion avoidance, fast retransmission and recovery
+	silly window syndrome handling: delayed ack, active window detection
+	rtt computation: ack of a retransmitted packet doesn't contribute to the estimated rtt
+	state machine: closed->connectiing->established->closing->closed
 
+required platform and libraries:
+	Windows
+	glib2
+	Microsoft C runtime
+
+todo:
+	more tests
+	improve reliability
+	support IPv6
+	support Linux
+	profiling and optimizing
+
+install or compile:
+	see deploy.txt

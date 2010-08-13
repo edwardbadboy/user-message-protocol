@@ -42,9 +42,6 @@ UMP_DLLDES int ump_init()
 	#ifndef G_THREADS_ENABLED
 		return -1;
 	#endif
-#ifdef RAND_DROP
-	srand( ((unsigned)time( NULL ) % UINT_MAX) );
-#endif
 	if(!g_thread_supported()){
 		g_thread_init(NULL);
 	}

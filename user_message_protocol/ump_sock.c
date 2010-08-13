@@ -1336,8 +1336,8 @@ static void ump_established_handle_data_packet(UMPSocket *u_sock,UMPPacket *p,gl
 	int check_if_get_msg=0;
 #ifdef RAND_DROP
 	int rnd_num=0;
-	rnd_num=rand();
-	if( rnd_num < (RAND_MAX/500) ){
+	rnd_num=g_random_int_range(0,99);
+	if( rnd_num < RAND_DROP_RATE ){
 		u_packet_free(p);
 		log_out("drop data on purposes %d\n",rnd_num);
 		return;

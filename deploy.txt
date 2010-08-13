@@ -1,6 +1,18 @@
-安装glib
-将glib_2.20.3-1_win32.zip、libiconv-1.9.1.bin.woe32.zip、gettext-0.14.5.zip的内容解压缩，将所有的对应bin文件夹中的dll拷贝到windows\system32下
+安装：
+	安装glib
+	glib_2.20.3-1_win32.zip、glib-dev_2.20.3-1_win32.zip解到C:\win32-libs\glib
+	libiconv-1.9.1.bin.woe32.zip解压到C:\win32-libs\libiconv-1.9.1.bin.woe32
+	gettext-0.14.5.zip解压到C:\win32-libs\gettext-0.14.5
+	将C:\win32-libs下所有子目录中对应bin文件夹中的dll拷贝到windows\system32下
 
-关于msvcrt
-release版的需要一同拷贝MSVCRT.DLL、MSVCR80.DLL
-debug版的需要MSVCRT.DLL、MSVCR80D.DLL
+	关于msvcrt
+	release版的user_message_protocol.dll需要MSVCRT.DLL、MSVCR80.DLL
+	debug版的user_message_protocol.dll需要MSVCRT.DLL、MSVCR80D.DLL
+	可放在同一目录下也可以放在windows\system32下
+
+
+编译：
+	安装好glib后便可用vs2005打开工程并编译
+
+运行：
+	将test_ump.exe、user_message_protocol.dll、test_ump.conf放在同一目录下便可运行

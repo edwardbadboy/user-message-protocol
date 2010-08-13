@@ -9,8 +9,6 @@
 #include <stdarg.h>
 #include <stdio.h>
 
-#define DEBUG_OUT
-
 static FILE* f_debug=NULL;
 
 void log_out(const char* format,...)
