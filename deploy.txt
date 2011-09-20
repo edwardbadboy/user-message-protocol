@@ -1,5 +1,7 @@
 安装：
-	安装glib
+	
+	windows环境下安装glib
+	到 http://www.gtk.org/download/win32.php 下载glib
 	glib_2.20.3-1_win32.zip、glib-dev_2.20.3-1_win32.zip解到C:\win32-libs\glib
 	libiconv-1.9.1.bin.woe32.zip解压到C:\win32-libs\libiconv-1.9.1.bin.woe32
 	gettext-0.14.5.zip解压到C:\win32-libs\gettext-0.14.5
